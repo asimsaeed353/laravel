@@ -54,3 +54,71 @@
             -> In this way i.e. by using the name of the slot, we specify the slot we are going to target.
 
     -> Navigation Links are little different and usually more complex from ordinary anchor tags. For example, we show different color for an active nav. So, you must keep nav links in separate file to remove the complexity from general file.
+
+* Lecture 05 : Style Active Nav Link *
+
+    -> We are going to add some custom styling and some code to highlight the active link.
+
+    * *     request()    * *
+        -> we used a method 'request()'. This helper method is used to grab information about the "CURRENT REQUEST" .
+
+        -> This helper method has another method 'request()->is('expression')' which takes an expression and tells if the given expression matches the current page.
+            -> request()->is('about') will return true if we are on 'about' page.
+
+    * *     Aria Current     * *
+
+       aria-current="page"
+       -> This HTML attribute is used by screen readers, and it tells the user who has impairment of eyes whether the active nav link is current page or not.
+
+    * *     Attributes and Props     * *
+
+        Attributes -> refer to HTML attributes like 'id', 'class', 'href' etc.
+
+        Props (Property) -> is anything that is not an attribute. You must know about them so not to include them as attribute of a tag.
+            -> If you have a prop of name 'active' like :
+            <a href="#" id="foo" active="uh-oh">
+               now you have an anchor tag with an attribute 'active'. And that doesn't make sense. So Props should be distinguishable from HTML attributes.
+
+    * *     Blade Directives     * *
+
+        -> Directives in Blade start with '@'.
+        -> Directives can be @dump, @foreach, @if, @Props and they are initialized on top of file .
+        -> They are ultimately compiled down to Vanilla PHP echo statements or function calls.
+
+        -> Props (properties) are usually declared as array. If we don't declare Props, browser will render them as normal HTML attributes. (you can confirm by inspecting the webpage).
+        -> props are passed as variables.
+
+            @props(['active' => false])
+
+            <a $active >Home</a>
+
+        -> Must initialize props with some value so if anything fails, that default value is used.
+
+        -> With laravel or blade, sometimes false is treated as "false" i.e. expression false is treated as string false.
+        How to solve this?
+        Put a semicolon : before a prop to indicate that the given value is an expression and not the string like:
+
+            <x-nav-link href="/" :active="false">Home</x-nav-link>
+
+        -> You can use PHP directive to execute php code as:
+
+            @php
+                // some php code
+            @endphp
+
+        * *     HOME WORK     * *
+
+            -> creating a new 'type' props and apply loop if the type is button or anchor tag. Code for home work
+
+                @props(['active' => false,
+                    'type' => 'a'
+                ])
+
+                @if($type === 'a')
+                    <a {{ $attributes }}  class=" {{ $active ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }} rounded-md px-3 py-2 text-base font-medium " aria-current=" {{ $active ? 'page' : 'false' }} ">{{ $slot }}</a>
+                @else
+                    <button {{ $attributes }}  class=" {{ $active ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }} rounded-md px-3 py-2 text-base font-medium " aria-current=" {{ $active ? 'page' : 'false' }} "> {{ $slot }} </button>
+                @endif
+
+
+
