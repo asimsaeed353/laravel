@@ -1,0 +1,56 @@
+``````` This is my notes file for '30 Days to Learn Laraval ```````
+
+* Lecture 01 *
+
+    -> Setting Up Herd and starting a new laraval project. Problems I faced :
+        -> Uncommenting Zip command in php.ini, installing an unzipping utility and adding its path to system variables, and running a local server on my system using 'php artisan serve' command because 'laravle-project.test' wasn't working in my browser.
+
+* Lecture 02 : Your First Route and View *
+
+    -> Adding two route paths (i.e. /about & /contact) in the /routes/web.php and building corresponding redering pages (view) in /resources/views/...
+
+* Lecture 03 : Create a Layout File *
+
+    -> update about.php, contact.php to 'about.blade.php' and 'contact.blade.php' . Think of Blade as an extra layer on top of php which gives you some goodies, some helper methods and some shortcuts.
+
+    -> Make /views/Components/layout.blade.php and past the layout HTML in that
+
+    -> We don't want to past our basic html layout code in every page's file (home,about, contact). So we paste it in a layout file and the reference it as a custom html tag. Since our file name is layout, so to reference it we use:
+
+        <x-layout>
+            <h1> Content which is unique to every page </h1>
+        </x-layout>
+
+        use of word x is just to make the tag unique and making sure we aren't using already exisiting tag.
+
+    -> In layout file, we must tell the file that we want to past some unique content in the corresponding page. So, we mark the space in the layout file using this code:
+
+        <?php echo $slot ?>
+        -> 'Slot' is a reserved keyword in Laravel.
+
+        -> Since we are using Blade, so '{{ $slot }}' will be equivalent to <?php echo $slot ?>
+
+	** HOME WORK **
+
+    -> extracting nav link in a file :
+        - extract nav link in a file /views/Components/nav-link.blade.php
+        - use {{ $attributes }} in place of 'href=""', since we are going to make it dynamic and link will be unique for each page.
+
+	./project/resources/views/Components/nav-link.blade.php~
+        <a {{ $attributes }}> {{ $slot }} </>
+
+	./project/resources/views/Components/layout.blade.php~
+        and <x-nav-link href="/page-route">Page Name </x-nav-link> in the layout file.
+
+* Lecture 04 : Pretty Layout TailwindCSS *
+
+    -> {{ $attributes }} can be 'href', 'id', 'class' etc.
+    -> What to do if you have more than one slots to be filled dynamically.
+        - suppose the variable name in the layout page is $heading. In the corresponding route page, you can write as
+
+
+        <x-slot:heading>Variable Dynamic Name</x-slot:heading>
+
+            -> In this way i.e. by using the name of the slot, we specify the slot we are going to target.
+
+    -> Navigation Links are little different and usually more complex from ordinary anchor tags. For example, we show different color for an active nav. So, you must keep nav links in separate file to remove the complexity from general file.
