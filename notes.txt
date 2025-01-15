@@ -179,7 +179,7 @@
             @endforeach
 
     -> Let's change the about page to the job page and shift this job listing to that and make our home page simple and clean.
-    -> We need to change about.blade.php to jobs.blade.php, change the nav-link in the layout.blade.php file. tweak the view method in the ./routes/web.php to include the 'jobs[]'.
+    -> We need to change 'about.blade.php' to 'jobs.blade.php', change the nav-link in the 'layout.blade.php' file. tweak the view method in the ./routes/web.php to include the 'jobs[]'.
     -> 'about' page is now converted into 'jobs' page.
 
     * *     Routing to Specific Job Page    * *
@@ -240,3 +240,134 @@
             -> This code says, look in the $jobs array, grab each item as $job and return true if the value of 'id' property of that job equal to given value of the id.
 
             -> Create a corresponding job.blade.php and leveraging $job variable, print the job details
+
+            -> href="" for the job page will become
+
+            ``` /jobs.blade.php
+
+            <ul>
+                @foreach( $jobs as $job)
+                        <a href="/jobs/{{ $job['id'] }}" class=" hover:underline">
+                            <li><strong class="text-blue-500"> {{ $job['title'] }} : </strong> Pays {{ $job['salary'] }}</li>
+                        </a>
+                @endforeach
+                </ul>
+
+            ```
+
+
+* Lecture 07: Auto loading and Models *
+
+    -> In the previous lecture, we did the duplication of 'jobs' array in two routes (i.e. '/jobs' and '/job') in '/web.php' file. Ofc, duplication is not good in code. We are going to solve this issue incrementally.
+
+    1st Solution:
+        -> declare the 'jobs' array in global scope and then use it in your functions.
+
+        ``` web.php
+
+        $jobs = [
+            // jobs array
+        ]
+
+
+        Route::get('/jobs', function () use ($jobs) {
+            return view('jobs', [
+                'jobs' => $jobs
+            ]);
+        });
+
+
+        Route::get('/jobs/{id}', function ($id) use $jobs {
+
+            $job = Arr::first($jobs, callback: fn($job) => $job['id'] == $id);
+            return view('job', ['job' => $job]);
+            });
+
+    2nd Solution:
+
+        -> Extract the array and place it in a class, and the we can access the array using a public method of the class.
+
+        ``` web.php
+
+        class Jobs{
+            public static function all(): array
+                // return [ //array containing arrays of jobs]
+        }
+
+        # notices the ': array' after function declaration. This is to specify the return type of the function
+
+        And then access it as :
+
+            'job' => Job::all()
+            and
+            $job = Arr::first(Job::all(), callback: fn($job) => $job['id'] == $id);
+
+
+    * *     Model - View - Controller (MVC)   * *
+
+        USER -- uses --> CONTROLLER -- manipulates --> MODEL -- updates --> VIEW -- sees --> USER -- uses -->
+
+        -> View : presentation layer
+        -> Controllers: Handle logic and act as an intermediary between the Model and the View.
+
+            -> It receives information from the user, process it (using models), and then return a response by rendering a view or redirecting to another page.
+            ->Like in 'web.php', we define routes, and then we define a function that handles that route is a controller.
+
+        -> Model: Represents data and  the business logic tier of your application.
+            -> Models are used to interact with database and define relationship between tables.
+
+            -> In case of job Board Platform:
+            -> Think of all the behaviors associated with the job. For example:
+                => What are the rules for creating a job?
+                => Can jobs be marked as opened or filled? What happens when a Job is filled?
+                => This does account for how do you store the jobs, do you write them to a file?
+                => How to remove or archive a Job?
+
+            -> All of the above stuffed can be encapsulated under the umbrella of MODEL.
+
+            -> Now we are gonna 'Job' class which we made in the previous lesson into our Model directory.
+
+    * *     Namespaces in Laravel/PHP   * *
+
+        Namespaces are used to organize and group classes, functions, or constants to avoid naming conflicts.
+        For example, if you have two files with same name 'User', you can place them in different namespaces to avoid conflicts.
+
+    * *     Making a new function find()    * *
+
+        -> How about if we extract the code to find the job with the given id and encapsulate it into a 'find()' method of job class? We're gonna do that
+
+        ```Job.php
+
+            public static function find(int $id): array
+                {
+                    return Arr::first(static::all(), callback: fn($job) => $job['id'] == $id);
+                }
+
+        ```
+
+        -> and just call that find() in web.php as :
+
+        ``` web.php
+
+            Route::get('/jobs/{id}', function ($id) {
+                // grab the job which has id equals to the user requested id
+                $job = Job::find($id);
+
+                // load the view
+                return view('job', ['job' => $job]);
+
+            });
+
+        ```
+
+
+    * *     Should We Declare Datatypes     * *
+
+        -> In case of errors, they'll point to a place where thins are potentially easy to handle. And won't direct you to confusing parts of the code.
+        -> in simpler words, points to the root cause where things will be comparatively easy to handle.
+
+    * *     Declare Unhappy Path    * *
+
+        -> Suppose user access a job with id which is not in our database, we must show user a 404 Page-Not-Found errors page.
+
+
