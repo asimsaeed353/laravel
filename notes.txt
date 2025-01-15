@@ -87,7 +87,8 @@
     * *     Blade Directives     * *
 
         -> Directives in Blade start with '@'.
-        -> Directives can be @dump, @foreach, @if, @Props and they are usually initialized on top in a file .
+        -> Directives can be @dump, @foreach, @if, @Props and
+        -> @props directives are usually initialized on top in a file .
         -> They are ultimately compiled down to Vanilla PHP echo statements or function calls.
 
         -> Props (properties) are usually declared as array. If we don't declare Props, browser will render them as normal HTML attributes. (you can confirm by inspecting the webpage).
@@ -126,4 +127,116 @@
                 @endif
 
 
+* Lecture 06: View Data and Route Wildcards *
 
+    -> In routes file, you can pass an array to the 'view()' along with the route. And, then you can access that array of variables in corresponding view file.
+
+    ``` laravel
+
+        ./routes/web.php
+        Route::get('/', function () {
+            return view('home', [
+                'greeting' => 'Yo',
+                'name' => 'Larry Nickolas'
+            ]);
+        });
+
+        ./resources/views/home.blade.php
+        <h1> {{ $greeting }} from the Welcome page. My name is {{ $name }} </h1>
+
+    ```
+
+    ->  Let's do something complex, suppose we have to list down job on our home page. So we can pass an array which will contains jobs and each job will have properties like 'Job Title' and 'Salary' etc.
+
+    ``` laravel
+
+    Route::get('/jobs', function () {
+        return view('jobs', [
+            'jobs' => [
+                [
+                    'id' => 1,
+                    'title' => 'Director',
+                    'salary' => '$50,000'
+                ],
+                [
+                    'id' => 2,
+                    'title' => 'Programmer',
+                    'salary' => '$10,000'
+                ],
+                [
+                    'id' => 3,
+                    'title' => 'Teacher',
+                    'salary' => '$40,000'
+                ]
+            ]
+        ]);
+    });
+
+
+    ./resources/views/jobs.blade.php
+            @foreach( $jobs as $job)
+                    <li><strong> {{ $job['title'] }} : </strong> Pays {{ $job['salary'] }}</li>
+            @endforeach
+
+    -> Let's change the about page to the job page and shift this job listing to that and make our home page simple and clean.
+    -> We need to change about.blade.php to jobs.blade.php, change the nav-link in the layout.blade.php file. tweak the view method in the ./routes/web.php to include the 'jobs[]'.
+    -> 'about' page is now converted into 'jobs' page.
+
+    * *     Routing to Specific Job Page    * *
+
+        -> We are now going to create a specific page for each job. For that, we have included 'id' as property so each job is identifiable, and we can route to that specific job page using '/jobs/{id}'
+
+        -> Turn the list items on jobs page into links using anchor tags.
+
+        * * *   How Do We Create a Route that Listens for /jobs/<some_dynamic_value> ?  * * *
+
+            -> Let's create a route in /web.php
+
+            ```
+
+            Route::get('/jobs/{id}', function ($id) {
+                dd($id);
+                return view('contact');
+            });
+
+            ```
+            -> Laravel has cool thing. It will automatically detect that if something is enclosed in curly braces, it is some 'wildcard' character, and then you can pass it to any function to use it as you like.
+
+            -> now if you put url example.test/jobs/1
+                => dd($id) will give you value 1.
+            -> likewise for 2 and 3.
+
+            -> notice {id} was a wildcard, laravel did all the work of grabbing it, isolating it and then passing to the callback function/closure.
+
+        * * *   Create a Route for Each Job Page  * * *
+
+            -> We can do this by passing all the jobs to the callback function in the Route::get() and then return the view where $id will be equal to user requested job id.
+
+            -> instead of running a foreach loop on each array item, leverage Laravel framework and use Arr::method() which is gonna give a number of methods to be run on array items.
+
+            -> use the first() method to find the first item in the array which matches the given criteria
+
+                ```
+
+                $job = \Illuminate\Support\Arr::first($jobs, function($job) use ($id) {
+                       return $job['id'] === $id;
+                });
+
+                // load the corresponding view
+                return view('job', ['job' => $job]);
+
+                ```
+
+                OR
+
+                ```
+
+                $job = \Illuminate\Support\Arr::first($jobs, fn($job) => $job['id'] == $id);
+
+                // load the corresponding view
+                return view('job', ['job' => $job]);
+
+                ```
+            -> This code says, look in the $jobs array, grab each item as $job and return true if the value of 'id' property of that job equal to given value of the id.
+
+            -> Create a corresponding job.blade.php and leveraging $job variable, print the job details
