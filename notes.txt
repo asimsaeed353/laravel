@@ -1,27 +1,28 @@
-``````` This is my notes file for '30 Days to Learn Laraval ```````
+``````` This is my notes file for '30 Days to Learn Laravel by Jeffrey Way  ```````
 
 * Lecture 01 *
 
-    -> Setting Up Herd and starting a new laraval project. Problems I faced :
-        -> Uncommenting Zip command in php.ini, installing an unzipping utility and adding its path to system variables, and running a local server on my system using 'php artisan serve' command because 'laravle-project.test' wasn't working in my browser.
+    -> Setting Up Herd and starting a new laravel project. Problems I faced :
+        -> Uncommenting Zip command in php.ini, installing an unzipping utility and adding its path to system variables, and running a local server on my system using 'php artisan serve' command because 'laravel-project.test' wasn't working in my browser.
+        -> I was Facing 'Failed to listen at 127.0.0.1:<port_number>'. I resolved it by going into C:\Users\<user>\.config\herd\php84\php.ini\ . Change `variables_order = "EGPCS"` to `variables_order = "GPCS"`.
 
 * Lecture 02 : Your First Route and View *
 
-    -> Adding two route paths (i.e. /about & /contact) in the /routes/web.php and building corresponding redering pages (view) in /resources/views/...
+    -> Adding two route paths (i.e. /about & /contact) in the /routes/web.php and building corresponding rendering pages (view) in /resources/views/...
 
 * Lecture 03 : Create a Layout File *
 
-    -> update about.php, contact.php to 'about.blade.php' and 'contact.blade.php' . Think of Blade as an extra layer on top of php which gives you some goodies, some helper methods and some shortcuts.
+    -> update about.php, contact.php to 'about.blade.php' and 'contact.blade.php' . Think of Blade as an extra layer on top of php which gives you some goodies, some helper methods and some shortcuts. (like tailwind CSS on top of CSS)
 
-    -> Make /views/Components/layout.blade.php and past the layout HTML in that
+    -> Make /views/Components/layout.blade.php and past the layout HTML (which is common to all pages) in that so we don't have to write same darn HTML in each web-page.
 
-    -> We don't want to past our basic html layout code in every page's file (home,about, contact). So we paste it in a layout file and the reference it as a custom html tag. Since our file name is layout, so to reference it we use:
+    -> We don't want to paste our basic html layout code in every page's file (home,about, contact). So we paste it in a layout file and the reference it as a custom html tag. Since our file name is layout, so to reference it we use:
 
         <x-layout>
             <h1> Content which is unique to every page </h1>
         </x-layout>
 
-        use of word x is just to make the tag unique and making sure we aren't using already exisiting tag.
+        use of word x is just to make the tag unique and making sure we aren't using already existing tag.
 
     -> In layout file, we must tell the file that we want to past some unique content in the corresponding page. So, we mark the space in the layout file using this code:
 
@@ -36,20 +37,22 @@
         - extract nav link in a file /views/Components/nav-link.blade.php
         - use {{ $attributes }} in place of 'href=""', since we are going to make it dynamic and link will be unique for each page.
 
-	./project/resources/views/Components/nav-link.blade.php~
-        <a {{ $attributes }}> {{ $slot }} </>
+        ```laravel
 
-	./project/resources/views/Components/layout.blade.php~
-        and <x-nav-link href="/page-route">Page Name </x-nav-link> in the layout file.
+	    ./project/resources/views/Components/nav-link.blade.php~
+        <a {{ $attributes }}> {{ $slot }} </a>
 
+	    ./project/resources/views/Components/layout.blade.php~
+        and <x-nav-link href="/page-route"> Page Name </x-nav-link> in the layout file.
+
+        ```
 * Lecture 04 : Pretty Layout TailwindCSS *
 
     -> {{ $attributes }} can be 'href', 'id', 'class' etc.
     -> What to do if you have more than one slots to be filled dynamically.
         - suppose the variable name in the layout page is $heading. In the corresponding route page, you can write as
 
-
-        <x-slot:heading>Variable Dynamic Name</x-slot:heading>
+        <x-slot:heading> Variable Dynamic Name </x-slot:heading>
 
             -> In this way i.e. by using the name of the slot, we specify the slot we are going to target.
 
@@ -68,7 +71,7 @@
     * *     Aria Current     * *
 
        aria-current="page"
-       -> This HTML attribute is used by screen readers, and it tells the user who has impairment of eyes whether the active nav link is current page or not.
+       -> This HTML attribute is used by screen readers, and it tells the user who has vision impairment whether the active nav link is current page or not.
 
     * *     Attributes and Props     * *
 
@@ -79,10 +82,12 @@
             <a href="#" id="foo" active="uh-oh">
                now you have an anchor tag with an attribute 'active'. And that doesn't make sense. So Props should be distinguishable from HTML attributes.
 
+        -> The attributes are rendered with the html page and can be seen when you inspect the page, however you can not see the props when you inspect a webpage using developer tools.
+
     * *     Blade Directives     * *
 
         -> Directives in Blade start with '@'.
-        -> Directives can be @dump, @foreach, @if, @Props and they are initialized on top of file .
+        -> Directives can be @dump, @foreach, @if, @Props and they are usually initialized on top in a file .
         -> They are ultimately compiled down to Vanilla PHP echo statements or function calls.
 
         -> Props (properties) are usually declared as array. If we don't declare Props, browser will render them as normal HTML attributes. (you can confirm by inspecting the webpage).
@@ -108,7 +113,7 @@
 
         * *     HOME WORK     * *
 
-            -> creating a new 'type' props and apply loop if the type is button or anchor tag. Code for home work
+            -> creating a new 'type' props and apply if-statement if the type is button or anchor tag. Code for homework
 
                 @props(['active' => false,
                     'type' => 'a'
