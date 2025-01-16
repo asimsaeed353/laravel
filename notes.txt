@@ -146,7 +146,7 @@
 
     ```
 
-    ->  Let's do something complex, suppose we have to list down job on our home page. So we can pass an array which will contains jobs and each job will have properties like 'Job Title' and 'Salary' etc.
+    ->  Let's do something complex, suppose we have to list down jobs on our home page. So we can pass an array which will contains jobs and each job will have properties like 'Job Title' and 'Salary' etc.
 
     ``` laravel
 
@@ -285,7 +285,7 @@
 
     2nd Solution:
 
-        -> Extract the array and place it in a class, and the we can access the array using a public method of the class.
+        -> Extract the array and place it in a class, and then we can access the array using a public method of the class.
 
         ``` web.php
 
@@ -316,16 +316,16 @@
         -> Model: Represents data and  the business logic tier of your application.
             -> Models are used to interact with database and define relationship between tables.
 
-            -> In case of job Board Platform:
+            -> In case of Job Board Platform:
             -> Think of all the behaviors associated with the job. For example:
                 => What are the rules for creating a job?
                 => Can jobs be marked as opened or filled? What happens when a Job is filled?
                 => This does account for how do you store the jobs, do you write them to a file?
                 => How to remove or archive a Job?
 
-            -> All of the above stuffed can be encapsulated under the umbrella of MODEL.
+            -> All of the above stuff can be encapsulated under the umbrella of MODEL.
 
-            -> Now we are gonna 'Job' class which we made in the previous lesson into our Model directory.
+            -> Now we are going to put 'Job' class (which we made in the previous lesson) into our Model directory.
 
     * *     Namespaces in Laravel/PHP   * *
 
@@ -334,7 +334,7 @@
 
     * *     Making a new function find()    * *
 
-        -> How about if we extract the code to find the job with the given id and encapsulate it into a 'find()' method of job class? We're gonna do that
+        -> How about if we extract the code to find the job with the given id and encapsulate it into a 'find()' method of job class? We're going to do that
 
         ```Job.php
 
@@ -363,7 +363,7 @@
 
     * *     Should We Declare Datatypes     * *
 
-        -> In case of errors, they'll point to a place where thins are potentially easy to handle. And won't direct you to confusing parts of the code.
+        -> In case of errors, they'll point to a place where things are potentially easy to handle. And won't direct you to confusing parts of the code.
         -> in simpler words, points to the root cause where things will be comparatively easy to handle.
 
     * *     Declare Unhappy Path    * *
@@ -371,3 +371,66 @@
         -> Suppose user access a job with id which is not in our database, we must show user a 404 Page-Not-Found errors page.
 
 
+* Lecture 08: Introduction to Migrations *
+
+    -> .env file in your project directory is where your Preferences, passwords, database information is saved.
+    -> Artisan in a Laravel Herd project is a powerful CLI tool used for tasks like code generation, database migrations, testing, cache management, and more.
+
+    -> If you didn't create project using CLI, you might don't have the file './database/database.sqlite'. You can run following command to create a new database:
+        php artisan migrate
+
+    * *     Connect to a Database     * *
+
+        -> You can do this using CLI.
+        -> If you want to do this using a GUI:
+            -> install TablePlus -> create an SQLite connection -> give database name -> connect to the database file in your project directory -> connect
+
+        -> The logic to create database tables is locked in PHP. When you create the database or run 'php artisan migrate', it runs the migrations stored in './database/migrations/*.php'. You can think of the files in this directory as Blueprints for table. If you make changes to files in this directory, you'll need to "run migrations" in order to display those changes in the database. You can add, reset, rollback changes using migrations (likev version control).
+
+
+    * *     Migrations     * *
+
+        -> Consider if your team member will have to construct a database same as yours. It'll be a nightmare if the database is big. One little mistake would cost a lot. Migration solves a big issue.
+            -> You just need to share these Migration files in '/database/migrations/*.php' with your teammate, and he just needs to run a single command to generate a database same as yours. The command is
+                php artisan migrate
+
+        -> You can have migration to drop a table, or to create a table, or to add a couple of columns to the table.
+
+        -> # # THINK OF MIGRATIONS AS ACTIONS YOU WANT TO PERFORM ON DATABASE. # #
+
+        -> To list down command related to database, use:
+            php artisan
+
+            * * *   Making Changes to Migrations    * * *
+
+                -> in 'create_users_table.php', in users table, change the name to first_name and add another column of last_name.
+
+                -> If you change anything in migration files, run the command to make changes effective:
+                    php artisan migrate:fresh
+
+                    # This will drop all the tables and construct them from scratch according to changed 'Migration' file
+
+                -> There's an issue with SQLite, it won't refresh until you close the connection and start the connection again.
+
+            * * *   Creating a Job Listings Table    * * *
+            
+                -> Run the command:
+                    php artisan make:migration
+
+                -> set the table name to create_job_listings_table
+                -> It will create a migration file in the /migrations.
+                -> This file will have two Methods i.e. 'up' and 'down'. 'up' is for applying any operation,  adding things and removing things.
+                -> 'up()' is for doing the thing and 'down()' is for undoing the thing.
+
+                * * * *     Creating new columns    * * * *
+
+                    ->add two columns in the job_listings table :
+                        $table->string('title');
+                        $table->string('salary');
+
+                    -> run the following to make changes effective:
+                        php artisan migrate
+
+                        # This will migrate only the new changes from Blueprint(i.e. migrations file) and to the table
+
+                    -> Populate data we were hard coding manually into the database 'job_listings' table.
