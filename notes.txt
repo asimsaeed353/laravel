@@ -413,7 +413,7 @@
                 -> There's an issue with SQLite, it won't refresh until you close the connection and start the connection again.
 
             * * *   Creating a Job Listings Table    * * *
-            
+
                 -> Run the command:
                     php artisan make:migration
 
@@ -434,3 +434,97 @@
                         # This will migrate only the new changes from Blueprint(i.e. migrations file) and to the table
 
                     -> Populate data we were hard coding manually into the database 'job_listings' table.
+
+
+* Lecture 09: Meet ELOQUENT *
+
+    -> Laravel ORM is called Eloquent. An ORM is 'Object-Relational Model'. It helps to interact with database in object-oriented way.
+    -> Eloquent automatically writes the PHP code you write into SQL queries. Helps you by not letting you write complex SQL queries.
+    -> Eloquent maps a row in your database table into a PHP Object. Thus, makes handling data easier for you.
+
+    * *     How to convert a Class into Eloquent Mode   * *
+
+        -> import the Eloquent class:
+            use \Illuminate\Database\Eloquent
+        -> change the class name to:
+            class Jobs extends Models{}
+
+    -> Eloquent relies heavily on 'convention over configuration'.
+    -> The Eloquent model name or class name should be 'singular form' of your table name. For example, if your table name in the database is "comments", your Eloquent model name or class name should be 'Comment'. Similarly, if your table name in database is 'posts', your Eloquent model name should be 'Post'.
+
+    -> If your Eloquent Model name is Jobs and your table name is job_listings. You can do:
+        1st -> change the model name to JobListing
+        2nd -> in class, you can declare this
+            protected $table = 'job_listings';
+
+    -> show the jobs on the page using Job::all() as:
+
+        ``` web.php
+
+            use App\Models\Job;
+
+            Route::get('/', function () {
+                $jobs = Job::all();
+
+                dd($jobs);
+
+            //    return view('home');
+            });
+
+        ```
+
+        -> In order to grab first job, use '$job[0]';
+        -> In order to grab first job's any specific property, use '$job[0->title]';
+
+
+        -> Get rid of the above route, and restore to original home route.
+
+    -> Because of 'Job::all()' in our jobs view. The jobs will be listed down but this time they are being fetched from database, and we don't have to hard code them.
+
+    * *     PHP Artisan Tinker   * *
+
+        -> `php artisan tinker`
+            ->this command will give you a playground shell to test your code, make and verify variables, create tables, users.
+
+        -> in tinker, run this:
+            > App\Models\Job::create(['title' => 'Acme Director', 'salary' => '$1,000,000')];
+
+        -> Laravel will give you MassAssignmentException.
+            > Mass Assignment is practice of assigning values to multiple model attributes at once, typically through an array.
+            -> Let's dig into that. Usually it's in hands of users to update values such as title or salary. We believe users are malicious. If a user requests to change the title of a post and somehow tweak the form request to change the author-id of the post or admin status of a user or admin. That can be catastrophic. To avoid this, Laravel by-default protects you from assigning values to the attributes that are not explicitly allowed for mass assignment.
+            -> Laravel protects you from accidentally assigning values to attributes that shouldn't be changed directly by the user, such as sensitive fields like password, is_admin, or id.
+            -> You can either turn this feature off or do the following:
+
+                -> explicitly allow attributes to be mass assigned:
+                    ```
+
+                        class Jobs extends Models{
+                            $protected $fillable = ['title', 'salary'];
+                        }
+
+                    ```
+
+                    -> Now, if the user tries to change the id, the request will be ignored.
+                    -> close the tinker, re-open it and re-run the command to create a new job and now it works.
+
+                    -> inspect all jobs
+                        ``` Apps\Models\Job::all(); ```
+
+                    -> to find a specific record in the database table. (the record must have a unique identifier)
+                        ``` Apps\Models\Job::find(id); ```
+
+                    -> to delete the job:
+                        $job = App\Models\Job::find(id);
+
+                        $job->delete();
+
+    * *     Creating Models and Migration using php artisan   * *
+
+        -> ` php artisan make:model <model-name> `
+            -> this command will create a new Model in the /Models/ .
+
+        -> ` php artisan make:model <model-name> -m `
+            -> this command will create a new Model in the /Models/  with corresponding Migration.
+
+
+
