@@ -528,3 +528,116 @@
 
 
 
+* Lecture 10: Model Factories *
+
+    -> Use Factory Models to quickly scaffold example data for purpose of both testing and preparing the local environment.
+
+    -> Given we say "What if we have 10 users", well Factory is used to generate those users quickly.
+
+    -> In Models, we have a trait 'use HasFactory'. This gives a lot of methods to the classes and is used to generate factories.
+
+    -> UserFactory.php  => factory to create many users.
+
+    * * Create Fake User using User.php Model and UserFactory.php factory * *
+
+        -> in 'UserFactory.php' change the name to first_name and fake()->name() to fake()->firstName(), same for last name
+        -> ``` php artisan tinker
+
+            \App\Models\User::factory()->create()
+            OR
+            \App\Models\User::factory(10)->create()    // it's gonna create 10 fake users
+
+
+    * * Create JobFactory factory corresponding to Job Model * *
+
+        -> run following command to create a factory 'JobFactory' :
+            ``` php artisan make:factory JobFactory ```
+
+            # Laravel is smart enough to understand and map JobFactory to corresponding Job Model.
+
+        -> Don't forget to add user HasFactory attribute in './app/Models/Job.php'
+
+         ```
+            use \Illuminate\Database\Eloquent\Factories\HasFactory;
+
+            class Job extends Model {
+                use HasFactory;
+            }
+
+          ```
+
+         -> Change the factory file according to the database table. For example, our database table has two columns i.e. title, and salary. fill those fields with some data (either manually or using faker API i.e. fake()) as :
+
+         ./database/JobFactory.php
+         ```
+
+            public function definition(): array
+                {
+                    return [
+                        'title' => fake()->jobTitle(),
+                        'salary' => '$50,000'
+
+                    ];
+                }
+
+         ```
+
+            # added title and salary manually
+
+
+    * * Toggle state of a factory * *
+
+        -> In UserFactory, there's a method called 'unverified()' which set the 'email_verified_at' column to null. If you wan to toggle the state, use this method as part of your create command
+
+            ``` \App\Models\User::factory()->unverified()->create() ```
+
+    * * Create new State/Factory of a factory * *
+
+        -> Suppose in UserFactory.php, you have an admin attribute which is by-default set to false. You can change it to true by defining a method for it. The code of the method is below. Also, don't forget to include 'admin' attribute in definition.
+
+    ``` ./database/factories/UserFactory
+
+        public function admin(): static
+            {
+                return $this->state(fn (array $attributes) => [
+                    'admin' => true,
+                ]); //   \App\Models\Job::factory()->admin()->create()  this will set the admin state to true
+            }
+
+    ```
+
+    * * Create new Employer Table * *
+
+        -> Let's introduce emloyer_id as foreign key to our job listings table, so each job has a corresponding employer_id
+        -> create an Employer mode with corresponding Migration:
+            -> php artisan make:mode Employer -m
+
+            -> add employer_name attribute to employer table schema in  and introduce $table->unsignedBigInt('employer_id') in job listings table schema in '/migrations/'.
+
+            -> while adding foreign keys, make sure the types of the foreign keys are identical (i.e. in job listings table and in employer table)
+
+            -> two methods to introduce forein key
+
+                (i) $table->unsignedBigInt('employer_id');
+                (ii) $table->foreignIdFor(\App\Models\Employer::class);
+
+            -> ``` php artisan migrate:fresh ``` to commit fresh changes
+
+            -> Since you had added 'employer_id' to schema, you have to include it in definition in 'JobFactory.php' and initialize it with fake()->method() or some dummy hard coded data.
+
+                'employer_id' => Employer::factory(),
+
+                # notice we didn't hardcode it but rather this code says, whenever we generate a job, create a corresponding relationship like employer.
+
+                -> Delete the Employer mode because we didn't generate corresponding factory and run this command
+
+                ``` php artisan make:mode Employer -f ```
+
+                # -f to generate corresponding factory. Since we already generated the corresponding migration so we didn't need to generate it again.
+
+                 -> in EmployerFactory.php add this attribute to the definition:
+                    'name' => fake()->company();
+
+                 -> In tinker, run this command to generate 10 jobs with corresponding employer Id:
+                    ```  \App\Models\Job::factory(10)->create() ```
+
