@@ -12,4 +12,8 @@ class Job extends Model {
 
     protected $table = 'job_listings';  // database table name
     protected $fillable = ['title', 'salary'];  // explicitly allowing attributes to be mass assigned
+
+    public function employer() {
+        return $this->belongsTo(Employer::class);
+    }
 }

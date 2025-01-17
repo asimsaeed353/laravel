@@ -261,7 +261,7 @@
     -> In the previous lecture, we did the duplication of 'jobs' array in two routes (i.e. '/jobs' and '/job') in '/web.php' file. Ofc, duplication is not good in code. We are going to solve this issue incrementally.
 
     1st Solution:
-        -> declare the 'jobs' array in global scope and then use it in your functions.
+        -> declare the 'jobs' array in global scope and then use it in your functions as.
 
         ``` web.php
 
@@ -376,7 +376,7 @@
     -> .env file in your project directory is where your Preferences, passwords, database information is saved.
     -> Artisan in a Laravel Herd project is a powerful CLI tool used for tasks like code generation, database migrations, testing, cache management, and more.
 
-    -> If you didn't create project using CLI, you might don't have the file './database/database.sqlite'. You can run following command to create a new database:
+    -> If you didn't create project using CLI, you might don't have the file './database/database.sqlite'. You can run following command to create a new database file:
         php artisan migrate
 
     * *     Connect to a Database     * *
@@ -385,14 +385,14 @@
         -> If you want to do this using a GUI:
             -> install TablePlus -> create an SQLite connection -> give database name -> connect to the database file in your project directory -> connect
 
-        -> The logic to create database tables is locked in PHP. When you create the database or run 'php artisan migrate', it runs the migrations stored in './database/migrations/*.php'. You can think of the files in this directory as Blueprints for table. If you make changes to files in this directory, you'll need to "run migrations" in order to display those changes in the database. You can add, reset, rollback changes using migrations (likev version control).
+        -> The logic to create database tables is locked in PHP. When you create the database or run 'php artisan migrate', it runs the migrations stored in './database/migrations/*.php'. You can think of the files in this directory as Blueprints for table. If you make changes to files in this directory, you'll need to "run migrations" in order to display those changes in the database. You can add, reset, rollback changes using migrations (like version control).
 
 
     * *     Migrations     * *
 
         -> Consider if your team member will have to construct a database same as yours. It'll be a nightmare if the database is big. One little mistake would cost a lot. Migration solves a big issue.
             -> You just need to share these Migration files in '/database/migrations/*.php' with your teammate, and he just needs to run a single command to generate a database same as yours. The command is
-                php artisan migrate
+                ```php artisan migrate```
 
         -> You can have migration to drop a table, or to create a table, or to add a couple of columns to the table.
 
@@ -508,10 +508,10 @@
                     -> close the tinker, re-open it and re-run the command to create a new job and now it works.
 
                     -> inspect all jobs
-                        ``` Apps\Models\Job::all(); ```
+                        ``` App\Models\Job::all(); ```
 
                     -> to find a specific record in the database table. (the record must have a unique identifier)
-                        ``` Apps\Models\Job::find(id); ```
+                        ``` App\Models\Job::find(id); ```
 
                     -> to delete the job:
                         $job = App\Models\Job::find(id);
@@ -587,7 +587,7 @@
 
     * * Toggle state of a factory * *
 
-        -> In UserFactory, there's a method called 'unverified()' which set the 'email_verified_at' column to null. If you wan to toggle the state, use this method as part of your create command
+        -> In UserFactory, there's a method called 'unverified()' which set the 'email_verified_at' column to null. If you want to toggle the state, use this method as part of your create command
 
             ``` \App\Models\User::factory()->unverified()->create() ```
 
@@ -609,19 +609,19 @@
     * * Create new Employer Table * *
 
         -> Let's introduce emloyer_id as foreign key to our job listings table, so each job has a corresponding employer_id
-        -> create an Employer mode with corresponding Migration:
+        -> create an Employer Model with corresponding Migration:
             -> php artisan make:mode Employer -m
 
             -> add employer_name attribute to employer table schema in  and introduce $table->unsignedBigInt('employer_id') in job listings table schema in '/migrations/'.
 
             -> while adding foreign keys, make sure the types of the foreign keys are identical (i.e. in job listings table and in employer table)
 
-            -> two methods to introduce forein key
+            -> two methods to introduce foreign key
 
                 (i) $table->unsignedBigInt('employer_id');
                 (ii) $table->foreignIdFor(\App\Models\Employer::class);
 
-            -> ``` php artisan migrate:fresh ``` to commit fresh changes
+            -> ``` php artisan migrate:fresh ``` to drop all tables and build them again from scratch
 
             -> Since you had added 'employer_id' to schema, you have to include it in definition in 'JobFactory.php' and initialize it with fake()->method() or some dummy hard coded data.
 
@@ -640,4 +640,78 @@
 
                  -> In tinker, run this command to generate 10 jobs with corresponding employer Id:
                     ```  \App\Models\Job::factory(10)->create() ```
+
+* Lecture 11: Two Key Eloquent Relationship Types *
+
+    -> In last lecture, we introduce 'employer_id' as a foreign key in the 'Job' table. We weren't able to access Employer information through the job which belongs to that specific Employer.
+    -> Seems like 'Eloquent Relationship' can help us in that.
+    -> Think about what kinda of relationship a specific job has with employer? 'A Job belongs to an Employer'. 'belongsTo()' is the key.
+
+    * * Access Details of Employer from Job * *
+        -> Let's declare a function in Job Model to access information of Employer using Job that belongs to that user.
+
+        ``` App\Models\Job.php
+                class Job extends Models{
+                    // other jargon code
+
+                    public function employer(){
+                        return $this->belongsTo(class_name::class);
+                    }
+                }  // class_name in this case is 'Employer'
+
+
+            -> now open tinker, grab the first job from the job_listings table
+                > $first_job = App\Models\Job::first();
+                > $first_job->employer;
+
+                # it'll give the details of Employer to whom the job belongs to.
+                # Notice we are accessing it as a property (i.e. ->employer) not as a method ( ->employer()), Laravel is smart enough to know it's a method and accesses that.
+
+                -> How 'foreign id' is helping us in that? when we run this command :
+                    ``` $first_job->employer; ```
+                an SQL query is being in run in the background which says, SELECT FROM EMPLOYER TABLE WHERE ID=1;
+
+    * * Access Jobs listed by an Employer * *
+
+        -> now think the reverse of listing details of employer using job. Can we list all the jobs listed by an employer? Not Yet.
+        -> It seems we need a method 'job()' in 'Employer.php' class that's gonna return all the jobs listed by an employer.
+        -> Think about what's the relationship between Employer and Jobs. An employer can create many jobs. So, AN EMPLOYER HAS MANY JOBS. hasMany it is.
+
+        ``` ./app/models/Employer.php
+
+            class Employer extends Model
+            {
+                /** @use HasFactory<\Database\Factories\EmployerFactory> */
+                use HasFactory;
+
+                public function jobs(){
+                    return $this->hasMany(Job::class);
+                }
+            }
+
+        -> now in tinker playground:
+            $employer = App\Models\Employer::first();  // or you can give any id
+            $employer->jobs;
+
+            # it might give you a collection of jobs
+
+        ```
+
+    -> Let's find out about more Relationships
+
+        -> I created
+            * Post Model with PostFactory and corresponding posts migrations file.
+            * Comment Model with CommentFactory and corresponding comments migrations file
+            * Introduced 'title', 'body' column in posts migrations schema and 'body' column in comment migrations schema and also to the corresponding factories files.
+            * Introduced post_id as foreign key in Comment migrations file and factory file
+            * Created 'hasMany()' relationship between Post and Comments, and 'belongsTo()' relationship between Comment and Post by defining method for each task in corresponding Models (Post.php & Comment.php).
+
+
+
+    
+
+
+
+
+
 
