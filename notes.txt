@@ -707,8 +707,148 @@
             * Created 'hasMany()' relationship between Post and Comments, and 'belongsTo()' relationship between Comment and Post by defining method for each task in corresponding Models (Post.php & Comment.php).
 
 
+* Lecture 12: Pivot Table and BelongsToMany Relationships *
 
-    
+    -> We'll need some kind of pivot table to connect tags with the job. We are going to do that in this lesson:
+    -> We have Job table, we make Tag table, and then we also need some kind of connecting table i.e. pivot table where we can store the tag_id and job_id.
+    -> In this pivot table, we can store
+        'job_id = 1' --> 'tag_id = 5'
+        'job_id = 5' --> 'tag_id = 7'
+        'job_id = 2' --> 'tag_id = 9'
+
+    * *     Creating a Tag Model, factory, migrations     * *
+        -> introduce 'name' to the tag migrations schema
+        -> you can create a brand-new migrations file for pivot table, but there are not hard and fast rule for that, you can create a schema call in tag table migrations
+
+        ```_create_tags_table.php
+            in the up function, one schema call will be to build tag tables while other will be to build 'job_tag' i.e. our own pivot table.
+             -> Pivot table mostly contains foreign ids.
+
+            public function up(): void
+                {
+                    Schema::create('tags', function (Blueprint $table) {
+                        $table->id();
+                        $table->string('name');
+                        $table->timestamps();
+                    });
+
+                    Schema::create('job_tag', function (Blueprint $table) {
+                        $table->id();
+                        $table->foreignIdFor(\App\Models\Job::class, 'job_listing_id');
+                        $table->foreignIdFor(\App\Models\Tag::class);
+                        $table->timestamps();
+                    });
+                }
+
+                # notice the argument 'job_listing_id' which is actually the column name for which the id will be generated. We want to be explicit that the id should be generated for 'job_listings' and not for 'job' table which laravel gives by-default.
+
+        ```
+        * * *   Constraints     * * *
+
+            -> At this point, if we associate a 'tag' with a 'job' and then delete the 'tag', the entry in the 'job_tag' will be there (an orphan) because. That record will point to a 'tag' that is no longer in the system To make the changes Cascade, we'll need to implement constraints.
+
+            -> let's introduce constraints for job_tag table in migrations file and also code to drop 'job_tag' table
+
+            ``` tags table migrations ```
+
+                in up method:
+
+                    $table->foreignIdFor(\App\Models\Job::class, 'job_listing_id')->constrained()->cascadeOnDelete();
+                                $table->foreignIdFor(\App\Models\Tag::class)->constrained()->cascadeOnDelete();
+
+                in down method:
+
+                    public function down(): void
+                        {
+                            Schema::dropIfExists('tags');
+                            Schema::dropIfExists('job_tag');
+                        }
+
+                -> run ``` php artisan migrate:rollback
+                       ``` php artisan migrate
+
+
+            -> This is yet Laravel side constraints. In laravel, these constraints are turned on by-default (You can turn them off in .env file).  To implement the constraints, we need to enable the foreign constraints on SQLite by running this query:
+
+                ``` PRAGMA foreign_keys=on ```
+
+                -> Now, if you delete a tag, it'll automatically delete the tag associated record in 'job_tag' table.
+                -> Same is true if we delete the referencing job.
+
+        * * *   belongsToMany Relationship     * * *
+
+            -> We have two Models, Job and Tag but there's no relationship between them yet. Think about what relationship Tags have with job? Tag 'belongsTo' a job but 'hasMany' jobs associated with. So, tag belongsTo a job but not exclusively. So, 'belongsToMany' is the relationship. Now the relationship in both the Model files ( 'Job.php' and 'Tag.php' ) is defined as (respectively) :
+
+            ``` Job.php
+
+                 public function tags() {
+                         return $this->belongsToMany(Tag::class);
+                     }  // $job->tags
+
+            ``` Job.php
+
+                 public function jobs() {
+                         return $this->belongsToMany(Job::class);
+                     } // $tag->jobs
+
+            ```
+            # This will still throw exception,  issue: you know who have a Job class (Job.php) but the related table name is 'job_listings'. We create instance of Job class, Laravel will look for column 'job_id' which is default. In our case, this column name is 'job_listing_id'. So we need to be explicit about column:
+
+            ``` Job.php
+
+                 public function tags() {
+                     return $this->belongsToMany(Tag::class, foreignPivotKey:'job_listing_id');
+                 }
+
+            ```
+            -> Run this in tinker:
+                $job = App\Models\Job::find(9)
+                and then
+                $job->tags  // lists tags associated to the job with id '9'
+
+            -> If you want to get the Jobs associated with a tag, you'll need to include 'relatedPivotKey' in the 'jobs()' method defined in 'Tag.php'
+
+                public function jobs() {
+                        return $this->belongsToMany(Job::class, relatedPivotKey: 'job_listing_id');
+                }
+
+                -> Run this in tinker:
+                    $tag = App\Models\Tag::find(9)
+                    and then
+                    $tag->jobs  // lists jobs associated to the tag with id '1'
+
+            * * * *     Attach a Tag to a Job       * * * *
+
+                -> we have tag with id '1' in $tag. Let's attach it to the job with id '7'. For this we'll need to access 'jobs' as method 'jobs()' rather than as property 'jobs'.
+
+                    ``` $tag->jobs()->attach(<id_of_job)
+                        OR
+                        $tag->jobs()->attach(App\Modes\Job::find(<id_of_job>)
+
+                        # you'll notice the changes will not reflect if you run $tag->jobs. It's because the previous collection of jobs associated to the tag is still in the memory because '$tag->jobs' is not performing any new SQL query. You can solve this by
+                            -> (i) fetching the $tag again by running $tag = App\Models\Tag::find(9);
+
+                            -> (ii) running a brand-new SQL query as:
+                                $tag->jobs()->get();
+
+                        -> In this way, you'll get the updated records.
+
+                        -> to pluck the single attribute from each job of the collection
+                            $tag->jobs()->get()->pluck('title');
+
+
+    * * Homework * *
+
+
+
+
+
+
+
+
+
+
+
 
 
 
