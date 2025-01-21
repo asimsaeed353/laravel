@@ -846,9 +846,9 @@
     -> Display the details of the employer on the job listing using this :
         ``` {{ $job->employer->name }} ```
 
-    * *     Lazy Loading  (N+1)      * *
+    * *     Lazy Loading  (N+1) Problem      * *
 
-        -> It is an optimization technique also known as on-demand loading. Instead of loading the whole web-page, lazy loading loads only the content that's immediately necessary. The remaining content is loaded as the user interacts with the page.
+        -> It is an optimization technique also known as on-demand loading. Instead of loading the whole web-page, lazy-loading loads only the content that's immediately necessary. The remaining content is loaded as the user interacts with the page.
             Example: Infinite scrolling where more content is loaded as the user goes down the page.
             -> Lazy Loading saves the resources. But it can cause performance issues if you are not thoughtful about it.
 
@@ -861,7 +861,7 @@
 
     * *     Eager Loading      * *
 
-        -> 'with()' eager loading, you can fetch all the records of the database with a single query. We just need to use 'with(<relationship_with)'. Change job route to:
+        -> 'with()' eager loading, you can fetch all the records of the database with a single query. We just need to use "with('<relationship_with')". Change job route to:
 
             ``` web.php
 
@@ -886,7 +886,7 @@
 
     * *     Configure the App to disable Lazy Loading      * *
 
-    -> in './app/Providers/AppServiceProvider.php' lies all the control to configure your appliation. In the 'boot()' function, which loads after all the dependencies have been loaded, we introduce the code to disable lazy loading .
+    -> in './app/Providers/AppServiceProvider.php' lies all the control to configure your application. In the 'boot()' function, which loads after all the dependencies have been loaded, we introduce the code to disable lazy loading .
 
     ``` ./app/Providers/AppServiceProvider.php
 
@@ -902,7 +902,7 @@
 
 * Lecture 14 : Pagination *
 
-    -> Remember in the last episode, we fetched and displayed all the records using eager loading i.e. ``` Job::with('employer')->get(); ```. 'get()' will fetch all the records. In our case, we had only 10 or so records. But in real life, the records can be millions. In those cases, running the 'get()' method will cause memory issues by fetching those million records and storing them in memory. This problem is solved using 'paginate()' in place of 'get()'. Moreover, we can give the number of records to display per page as argument to 'paginate()' method. Here's the modified code:
+    -> Remember in the last episode, we fetched and displayed all the records using eager loading i.e. ``` Job::with('employer')->get(); ```. 'get()' will fetch all the records. In our case, we had only 10 or so records. But in real life, the records can be in millions. In those cases, running the 'get()' method will cause memory issues by fetching those million records and storing them in memory. This problem is solved using 'paginate()' in place of 'get()'. Moreover, we can give the number of records to display per page as argument to 'paginate()' method. Here's the modified code:
         $jobs = Job::with('employer')->Paginate(3);  // 3 records will be shown per page
 
         -> Now, we'll also introduce pagination links to navigate to next or previous pages. It's ridiculously easy:
@@ -918,7 +918,7 @@
         * *     Load the Pagination vendor into the application directory       * *
 
             -> By-default, the Laravel is using TailwindCSS to style the pagination links. It also supports other tools and libraries like Bootstrap etc.
-            -> The markup or styling of the pagination links is stored in Pagination files which is a vendor package. The vendor package files need to be loaded into the application files to modify them.
+            -> The markup or styling of the pagination links is stored in Pagination package which is a vendor package. The vendor package files need to be loaded into the application files to modify them.
             -> Let's load these files:
                 ``` php artisan vendor:publish ```
 
@@ -926,6 +926,7 @@
                 # select the Pagination, and it will load that in /resources/view/vendors/Pagination
 
             -> To change the default settings and setting up bootstrap to style pagination links, we'll need to configure our app
+
                 ``` ./app/Providers/AppServiceProvider.php
 
                         # introduce this line to the boot():
@@ -939,7 +940,7 @@
 
         !!!!!     Issue with the Pagination       !!!!!
 
-            -> If you have millions of records, you'll need numerous pages to show them. It might take some time to calculate those page and navigating back and forth. This issue can be solved using
+            -> If you have millions of records, you'll need numerous pages to show them. It might take some time to calculate those page each time user navigate back and forth. This issue can be solved using
 
                 (i) Simple Navigation Links
                  i.e. let's not display the page number and only show the 'Previous' and 'Next' button. This is done by simply changing '->paginate(3)' to '->simplePaginate(3)' :
@@ -958,7 +959,7 @@
 
                  ```
 
-                 # it fetches the record from database and then show the record with offset value depending on up the record argument to ->simplePaginate().
+                 # it fetches the record from database and then show the record with offset value depending on the record argument to ->simplePaginate(3).
 
                  (ii) Cursor base Pagination
 
