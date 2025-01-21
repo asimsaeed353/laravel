@@ -969,6 +969,70 @@
                     # It fetches the record by storing the starting location of the next set of results.
 
 
+* Lecture 15 : Database Seeders *
+
+    -> If you run ``` php artisan migrate:fresh ``` it'll drop all of your tables and rebuild them from scratch. And now you'll have to manually populate the records in the database.
+    -> We have been populating dummy records into the database using the factory().
+    -> The issue with factory is we will have to run the darn command for each table in php artisan tinker.
+    -> Instead we can seed the database with dummy record, and we'll have to run only single command to seed the database.
+
+        php artisan migrate:fresh ```  and then ``` php artisan db:seed ``` ```
+
+            OR COLLECTIVELY
+
+        ``` php artisan migrate:fresh --seed ```
+
+        # it says, drop all the tables and rebuild them and seed the database with records.
+
+        # the seeder is present in ./database/seeders/DatabaseSeeders.php
+
+
+        -> Till now, we have been seeding the database with a single user. Let's seed the database with multiple jobs. Keep an eye on database constraints tho (e.g. unique emailID of each user)
+        -> test@example is already in the database, so if you run ``` php artisan db:seed ``` there will be violation of UNIQUE constraints. So, make sure to fresh the database before seeding so these constraints are not violated. You can run this to avoid constraints violation:
+
+            ``` php artisan migrate:fresh --seed ```
+
+           -> Before that let's create a job factory:
+
+           ``` ./database/seeders/DatabaseSeeder.php
+
+               use App/Models/Jobs;   // make sure to include this
+
+               run(){
+                    Job::factory(100)->create();
+               }
+
+           ```
+
+    * *     Making a New Seeder     * *
+
+        -> You can have different seeder classes for different tables so you can
+        i) run these classes in isolation so you would not have to build all the tables just to build one specific table.
+        ii) create dedicated seeders for constructing the whole world for a test. This can help in case you want to run particular test.
+
+        For example you can have a seeder class JobSeeder
+        -> ``` php artisan make:seeder ```
+            -> give the name of the seeder
+            -> Place the code to seed the database
+
+            -> To run this class with your root seeder class, introduce the following in 'DatabaseSeeder.php'
+                ``` $this->call(JobSeeder::class); ```
+
+        -> If you want to run the specific seeder class and not the default seeder class (i.e. DatabaseSeeder.php), run
+
+            ``` php artisan db:seed --class=JobSeeder ```
+
+
+    * *     Difference between Factories and Database Seeder     * *
+
+        -> Factories : used to quickly scaffold data and prepare test.
+        -> Database seeder : give us a class that we can trigger to run one or more factories or calls. Seeder doesn't have to always trigger a factory. It can also make direct database calls. It can reach to Eloquent directly. It just they usually reach for factories because factories are incredibly easy to prepare.
+
+
+
+
+
+
 
 
 
