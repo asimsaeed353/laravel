@@ -900,6 +900,78 @@
     # now an error will be thrown if application does the lazy loading
 
 
+* Lecture 14 : Pagination *
+
+    -> Remember in the last episode, we fetched and displayed all the records using eager loading i.e. ``` Job::with('employer')->get(); ```. 'get()' will fetch all the records. In our case, we had only 10 or so records. But in real life, the records can be millions. In those cases, running the 'get()' method will cause memory issues by fetching those million records and storing them in memory. This problem is solved using 'paginate()' in place of 'get()'. Moreover, we can give the number of records to display per page as argument to 'paginate()' method. Here's the modified code:
+        $jobs = Job::with('employer')->Paginate(3);  // 3 records will be shown per page
+
+        -> Now, we'll also introduce pagination links to navigate to next or previous pages. It's ridiculously easy:
+            ``` jobs.blade.php
+
+                // introduce:
+                <div>
+                        {{ $jobs->links() }}
+                </div>
+
+            ```
+
+        * *     Load the Pagination vendor into the application directory       * *
+
+            -> By-default, the Laravel is using TailwindCSS to style the pagination links. It also supports other tools and libraries like Bootstrap etc.
+            -> The markup or styling of the pagination links is stored in Pagination files which is a vendor package. The vendor package files need to be loaded into the application files to modify them.
+            -> Let's load these files:
+                ``` php artisan vendor:publish ```
+
+                # vendor: any package loaded by composer,   # publish: we want to load the vendor
+                # select the Pagination, and it will load that in /resources/view/vendors/Pagination
+
+            -> To change the default settings and setting up bootstrap to style pagination links, we'll need to configure our app
+                ``` ./app/Providers/AppServiceProvider.php
+
+                        # introduce this line to the boot():
+                            \Illuminate\Pagination\Paginator::useBootstrap();
+                            OR
+                            \Illuminate\Pagination\Paginator::defaultView('view_name');
+
+                ```
+
+                -> ' ./resources/views/vendors/pagination/tailwind.blade.php ' is the file to tweak if we want to change the default styling.
+
+        !!!!!     Issue with the Pagination       !!!!!
+
+            -> If you have millions of records, you'll need numerous pages to show them. It might take some time to calculate those page and navigating back and forth. This issue can be solved using
+
+                (i) Simple Navigation Links
+                 i.e. let's not display the page number and only show the 'Previous' and 'Next' button. This is done by simply changing '->paginate(3)' to '->simplePaginate(3)' :
+
+                 ``` web.php
+
+                    Route::get('/jobs', function () {
+                    //    $jobs = Job::with('employer')->paginate(3);
+                        $jobs = Job::with('employer')->simplePaginate(3);
+
+
+                        return view('jobs', [
+                            'jobs' => $jobs
+                        ]);
+                    });
+
+                 ```
+
+                 # it fetches the record from database and then show the record with offset value depending on up the record argument to ->simplePaginate().
+
+                 (ii) Cursor base Pagination
+
+                    change '->simplePaginate(3)' to '->cursorPaginate()'
+
+                    # it has a caveat that if you hover over next or previous button, the page will show the link which will be the link of the record to fetch. It longer says that 'go to the form and page number #' but rather it will show the link of the record. Usually you don't want to display links but areas like infinite scrolling, you might like to fetch record using that record's link.
+
+                    # It fetches the record by storing the starting location of the next set of results.
+
+
+
+
+
 
 
 

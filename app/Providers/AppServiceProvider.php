@@ -21,5 +21,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading();
+
+        /*
+        \Illuminate\Pagination\Paginator::useBootstrap();
+        \Illuminate\Pagination\Paginator::defaultView('');
+
+        */
     }
 }

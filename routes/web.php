@@ -18,7 +18,10 @@ Route::get('/jobs', function () {
 */
 
 Route::get('/jobs', function () {
-    $jobs = Job::with('employer')->get();
+//    $jobs = Job::with('employer')->paginate(3);   // Pagination in action
+
+    $jobs = Job::with('employer')->simplePaginate(3);
+//    $jobs = Job::with('employer')->cursorPaginate(3);
 
     // lazy loading is disabled by default. You can only eager load now.
 
