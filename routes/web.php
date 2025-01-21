@@ -7,9 +7,23 @@ Route::get('/', function () {
     return view('home');
 });
 
+/* Lazy Loading
+
 Route::get('/jobs', function () {
     return view('jobs', [
         'jobs' => Job::all()
+    ]);
+});
+
+*/
+
+Route::get('/jobs', function () {
+    $jobs = Job::with('employer')->get();
+
+    // lazy loading is disabled by default. You can only eager load now.
+
+    return view('jobs', [
+        'jobs' => $jobs
     ]);
 });
 

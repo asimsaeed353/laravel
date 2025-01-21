@@ -674,7 +674,7 @@
     * * Access Jobs listed by an Employer * *
 
         -> now think the reverse of listing details of employer using job. Can we list all the jobs listed by an employer? Not Yet.
-        -> It seems we need a method 'job()' in 'Employer.php' class that's gonna return all the jobs listed by an employer.
+        -> It seems we need a method 'job()' in 'Employer.php' class that's going to return all the jobs listed by an employer.
         -> Think about what's the relationship between Employer and Jobs. An employer can create many jobs. So, AN EMPLOYER HAS MANY JOBS. hasMany it is.
 
         ``` ./app/models/Employer.php
@@ -718,7 +718,7 @@
 
     * *     Creating a Tag Model, factory, migrations     * *
         -> introduce 'name' to the tag migrations schema
-        -> you can create a brand-new migrations file for pivot table, but there are not hard and fast rule for that, you can create a schema call in tag table migrations
+        -> you can create a brand-new migrations file for pivot table, but there are no hard and fast rule for that, you can create a schema call in tag table migrations
 
         ```_create_tags_table.php
             in the up function, one schema call will be to build tag tables while other will be to build 'job_tag' i.e. our own pivot table.
@@ -768,7 +768,7 @@
                        ``` php artisan migrate
 
 
-            -> This is yet Laravel side constraints. In laravel, these constraints are turned on by-default (You can turn them off in .env file).  To implement the constraints, we need to enable the foreign constraints on SQLite by running this query:
+            -> These are Laravel side constraints yet. In laravel, these constraints are turned on by-default (You can turn them off in .env file).  To implement the constraints, we need to enable the foreign constraints on SQLite by running this query:
 
                 ``` PRAGMA foreign_keys=on ```
 
@@ -777,7 +777,7 @@
 
         * * *   belongsToMany Relationship     * * *
 
-            -> We have two Models, Job and Tag but there's no relationship between them yet. Think about what relationship Tags have with job? Tag 'belongsTo' a job but 'hasMany' jobs associated with. So, tag belongsTo a job but not exclusively. So, 'belongsToMany' is the relationship. Now the relationship in both the Model files ( 'Job.php' and 'Tag.php' ) is defined as (respectively) :
+            -> We have two Models, Job and Tag but there's no relationship between them yet. Think about what relationship Tags have with job? Tag 'belongsTo' a job but 'hasMany' jobs associated with it. So, tag belongsTo a job but not exclusively. So, 'belongsToMany' is the relationship. Now the relationship in both the Model files ( 'Job.php' and 'Tag.php' ) is defined as (respectively) :
 
             ``` Job.php
 
@@ -785,7 +785,7 @@
                          return $this->belongsToMany(Tag::class);
                      }  // $job->tags
 
-            ``` Job.php
+            ``` Tag.php
 
                  public function jobs() {
                          return $this->belongsToMany(Job::class);
@@ -840,8 +840,64 @@
     * * Homework * *
 
 
+* Lecture 13 : Eager Loading *
+
+    -> Starts with styling the job listing with turning list into clickable long cards.
+    -> Display the details of the employer on the job listing using this :
+        ``` {{ $job->employer->name }} ```
+
+    * *     Lazy Loading  (N+1)      * *
+
+        -> It is an optimization technique also known as on-demand loading. Instead of loading the whole web-page, lazy loading loads only the content that's immediately necessary. The remaining content is loaded as the user interacts with the page.
+            Example: Infinite scrolling where more content is loaded as the user goes down the page.
+            -> Lazy Loading saves the resources. But it can cause performance issues if you are not thoughtful about it.
+
+        -> Every time you want to fetch data from database, a query runs behind the scenes. If you want to fetch 100 records, 101 queries will be run. This is called N+1 Problem.
+        -> N+1 problem arises when database queries are run using loop.
+
+        -> Fetch the 'Laravel Debugbar' using the following command :
+            ``` composer require barryvdh/laravel-debugbar --dev ```
 
 
+    * *     Eager Loading      * *
+
+        -> 'with()' eager loading, you can fetch all the records of the database with a single query. We just need to use 'with(<relationship_with)'. Change job route to:
+
+            ``` web.php
+
+                Route::get('/jobs', function () {
+                    $jobs = Job::with('employer')->get();
+
+                    return view('jobs', [
+                        'jobs' => $jobs
+                    ]);
+                });
+
+            ```
+            # you'll notice the query count (which was 8) has now been reduced to 2.
+
+            # $jobs = Job::all();   // Lazy loading
+            # $jobs = Jobs::with('employer')->get();  // Eager Loading
+
+            -> With eager loading, if we have fetched 100 records from the database, we'll have only 2 SQL queries.
+
+
+        -> Lazy Loading OR Eager Loading : Simply Your Preference.
+
+    * *     Configure the App to disable Lazy Loading      * *
+
+    -> in './app/Providers/AppServiceProvider.php' lies all the control to configure your appliation. In the 'boot()' function, which loads after all the dependencies have been loaded, we introduce the code to disable lazy loading .
+
+    ``` ./app/Providers/AppServiceProvider.php
+
+           public function boot(): void
+               {
+                   Model::preventLazyLoading();  // this line disables the lazy loading
+               }
+
+    ```
+
+    # now an error will be thrown if application does the lazy loading
 
 
 
