@@ -1030,6 +1030,20 @@
         -> Database seeder : give us a class that we can trigger to run one or more factories or calls. Seeder doesn't have to always trigger a factory. It can also make direct database calls. It can reach to Eloquent directly. It just they usually reach for factories because factories are incredibly easy to prepare.
 
 
+* Lecture 16 : Forms and CSRF *
+
+    -> let's build a 'create job' page. The route, conventionally should be '/jobs/create' but it will conflict with the wild-card '/jobs/{id}' that happens to be above this. To avoid this, make sure the wild-cards are declared close to the bottom. So, declare '/jobs/create' route before
+    '/jobs/{id}'.
+
+    * *     File Handing & Directory Management     * *
+
+        -> Inside view, create a directory 'jobs' which has following files with modified view files.
+            'index.blade.php'       =>      to show all the jobs            => return view(jobs.index, // other code)
+            'show.blade.php'        =>      to show a single job            => return view(jobs.show, // other code)
+            'create.blade.php'      =>      to show job creation form       => return view(jobs.create, //other code)
+
+        -> Notice, we have used dot notation '.' in web.php return view(). You can go with '/' as usual.
+
 
 
 
