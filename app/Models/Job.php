@@ -11,7 +11,12 @@ class Job extends Model {
     use HasFactory;  // to generate factories of jobs
 
     protected $table = 'job_listings';  // database table name
-    protected $fillable = ['title', 'salary'];  // explicitly allowing attributes to be mass assigned
+    /*
+        protected $fillable = ['employer_id', 'title', 'salary'];  // explicitly allowing attributes to be mass assigned
+
+    */
+
+    protected $guarded = [];  // allow all fields to be mass assigned.
 
     public function employer() {
         return $this->belongsTo(Employer::class);

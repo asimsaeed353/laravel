@@ -1037,12 +1037,137 @@
 
     * *     File Handing & Directory Management     * *
 
-        -> Inside view, create a directory 'jobs' which has following files with modified view files.
+        -> Inside view, create a directory 'jobs' which has the following files with modified view files.
             'index.blade.php'       =>      to show all the jobs            => return view(jobs.index, // other code)
             'show.blade.php'        =>      to show a single job            => return view(jobs.show, // other code)
             'create.blade.php'      =>      to show job creation form       => return view(jobs.create, //other code)
 
         -> Notice, we have used dot notation '.' in web.php return view(). You can go with '/' as usual.
+
+        -> add method and action to the form to make a post request as :
+            ``` <form method="POST" action="/jobs"> ```
+
+            -> since our route for post request is not defined, let's do that in 'web.php'. Keep in mind, we are making a post request now:
+
+                ``` web.php
+
+                    // Post request from Create Job form
+                    Route::post('/jobs', function () {
+                        dd("Hello from the post request");
+                    });
+
+                ```
+                # It'll display '419 | PAGE EXPIRED' page. Let's dig into that.
+
+    * *     Cross Site Request Forgery CSRF     * *
+
+        -> The '419 | PAGE EXPIRED' error refers to the automatic security measure by laravel for Cross Site Request Forgery.
+
+        -> Suppose you get a request from you bank to update the password, the update password form looks like it is form the local bank but it is actually from a hacker. You type in and update your password. The form will make a post request to the local bank database but hacker was able to intercept your data and will use this password for malicious activities. This is the Cross Site aspect of this forgery.
+
+        -> How will the localBank let you update password? You might had signed in in your account hours ago, or last night and the session cookies are still in browser. When you make a POST request, these cookies will be read and it will let you update the password.
+        -> Now, you password has gone to the hacker.
+
+        * * *       How to Fix CSRF?       * * *
+
+            -> This problem is fixed by leveraging the use of a 'token' which will be included as part of form .
+
+                <input
+                    type="hidden"
+                    name="name"
+                    value="AXQ0ajfscneaN10"
+                >
+
+            -> Now, we will compare this token (i.e. part of form) with the token that is stored in your browser in current session.
+
+                <?php
+
+                    if($token !== $session->token()) {
+                        // Tokens do not match!
+                        // Show 419 error page.
+                    }
+
+            -> If those match, then things are probably legit.
+
+            * * *       @csrf Directive     * * *
+
+                -> To apply fix of CSRF in your form, introduce this:
+
+                    ``` <form method="POST" action="/jobs">
+                            @csrf
+
+                         # @csrf will be compiled down to Vanilla PHP and laravel will take care of the rest.
+                         # csrf will be shown as hidden input with token value. You can confirm that by inspecting the page.
+
+                             ``` <input type="hidden" name="_token" value="Yj2CQJdhlR5jVso3HtyrJ0MxwAsvUIayeOg195xK" autocomplete="off"> ```
+
+
+                -> Now, if tokens match, the post request will be made.
+
+    * *     Extracting the Form Attributes from a Post Request     * *
+
+        -> When post request is made, we need to extract some attributes ('title' and 'salary' in this case) from POST request, so that we can store those attributes in the database. We can get the attribute by using 'request()->all()';
+
+            ``` web.php
+
+                // Post request from Create Job form
+                Route::post('/jobs', function () {
+                    dd(request()->all());
+                });
+
+            ```
+
+            # you can get a specific attribute by passing it's name as an argument to the 'request()'.
+                ``` request('title');
+
+        -> Let's store the attributes in the database using 'create()' request.
+
+            ```web.php
+
+                // Post request from Create Job form
+                Route::post('/jobs', function () {
+
+                    Job::create([
+                        'title' => request('title'),
+                        'salary' => request('salary'),
+                        'employer_id' => 1
+                    ]);
+
+                    return redirect('/jobs');
+                });
+
+                # notice we hardcoded 1 as employer_id because we haven't touched upon authentication yet. We assume the employer is an authenticated user.
+
+                # make sure to add 'employer_id' in the '$fillable' fields in Job Model so we can mass assign it.
+
+        -> Now our job will be listed at the last page. We want latest jobs to be shown first. We can leverage 'latest()' which run SQL ORDER_BY clause and order the records on the bases of 'time at which they were created'. Introduce this function where we are doing the pagination to list all the jobs.
+
+            ``` web.php
+
+                Route::get('/jobs', function () {
+                    $jobs = Job::with('employer')->latest()->simplePaginate(3);
+
+            ```
+
+    * *     Fillable Fields and Guarded Fields     * *
+
+        -> $fillable : those fields that we can mass assign.
+        -> $guarded : guarded fields that we don't want to be mass assigned.
+
+        # To avoid the hassle of declaring each field in the $fillable which you want to mass assign. You can define the fields which you don't want to be guarded. In other words, you can declare that you want all the fields to be mass assigned.
+         !!! Do this only when you are aware of potential damage. !!!
+
+            $fillable = [
+                // all the fields
+            ];
+
+            OR
+
+            $guarded = [];
+
+            # You will have to declare one of this statement in all your MODELS.
+
+
 
 
 
