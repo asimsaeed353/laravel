@@ -1250,30 +1250,131 @@
     -> go to ' https://laravel.com/docs/11.x/validation ' to know more about validation rules.
 
 
+* Lecture 18 : Editing, Updating and Deleting a Resource *
+
+    -> add an 'Edit Job' button to the single job page
+
+    -> the route to the "job edit" form will be '/jobs/{id}/edit' and the 'view' will be 'jobs.edit'. Let's do this :
+
+        ```web.php
+
+            // Edit a job
+            Route::get('/jobs/{id}/edit', function ($id) {
+                $job = Job::find($id);
+
+                return view('jobs.edit', ['job' => $job]);
+
+            });
+
+        ```
+
+        -> when we go to the specific job page to edit it, we'll want the attributes must be auto-populated in 'title' field and 'salary' field. Do this:
+            <input
+                type="text"
+                name="title"
+                id="title"
+                class="block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6" placeholder="Shift Leader"
+                value="{{ $job->title }}"  // value will populate the title in the title field
+                required>
+
+             # same for salary
+
+            <input
+                type="text"
+                name="salary"
+                id="salary"
+                class="block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6" placeholder="$50,000 USD / Year"
+                value=" {{ $job->salary }}"
+                required>
+
+        ```
+
+    -> By default, the browser only understands GET and POST request. However, framework can understand more requests, such as :
+        i) Patch : set of instructions on how to modify a resource
+        ii) Delete : destroy a resource.
+
+        -> with the same URI (i.e. '/jobs/{id}') and changing request type, we can modify or destroy a resource as:
+
+            ```web.php
+
+                // Edit Job
+                Route::patch('/jobs/{id}', function ($id) {
+
+                    // validate the request
+                    request()->validate([
+                        'title' => ['required', 'min:3'],  // title is required and should be more than three numbers
+                        'salary' => ['required']
+                    ]);
+
+                    // authorization ( ....On hold)
+
+                    // update the job
+
+                    $job = Job::findOrFail($id);  // findOrFail() : won't proceed if the job is null
+
+                    $job->update([
+                        'title' => request('title'),
+                        'salary' => request('salary')
+                    ]);
+
+                    // OR
+
+                    /*
+                    $job->title = request('title');
+                    $job->salary = request('title');
+                    $job->save();
+                     */
+
+                    // redirect to the specific page
+                    return redirect('/jobs/' . $job->id);
+
+                });
+
+                // Delete Job
+                Route::delete('/jobs/{id}', function ($id) {
+
+                    // authorize (... on hold)
+
+                    // delete the job
+                    Job::findOrFail($id)->delete();
+
+                    // redirect
+                    return redirect('/jobs');
+                });
 
 
 
+    -> Since browser doesn't understand the PATCH request, we have to signal the framework on form submission that we made 'POST' request because we had to but actually we want to make a PATCH request. We can hint the framework by using a directive:
+
+        <form method="POST" action="/jobs/{{ $job->id }}">
+                @method('PATCH')
 
 
+    * * Handling Delete Request * *
 
+        -> We'll add a delete button below the edit page. We can not have a form within a form. So we'll declare our delete button in PATCH request / edit job form but point the delete button to trigger a DELETE request form.
 
+        ``` <div  class="flex items-center ">
+                <button form="delete-form class="text-red-500 text-sm font-semibold">Delete</button>
+            </div>
 
+        ```
 
+        -> Now, declare another form and trigger the form method with the delete button by passing form id as attribute to the delete button
 
+        ```
+            <form
+            method="POST"
+            action="/jobs/{{ $job->id }}"
+            id="delete-form"
+            class="hidden">
 
+                @csrf // authentication
+                @method('delete') // indicate that this is delete request
 
+            </form>
 
-
-
-
-
-
-
-
-
-
-
-
+        ```
 
 
 
