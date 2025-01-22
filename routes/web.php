@@ -32,6 +32,12 @@ Route::get('/jobs/{id}', function ($id) {
 // Post request from Create Job form
 Route::post('/jobs', function () {
 
+    // validate the attributes
+    request()->validate([
+        'title' => ['required', 'min:3'],  // title is required and should be more than three numbers
+        'salary' => ['required']
+    ]); // if this validation fails, user will be redirected to form again and laravel will pass an $error[] which contains all the attributes which failed
+
     Job::create([
         'title' => request('title'),
         'salary' => request('salary'),

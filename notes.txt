@@ -1167,6 +1167,96 @@
 
             # You will have to declare one of this statement in all your MODELS.
 
+* Lecture 17 : Valid User Input *
+
+    -> add a "create job" button to the layout file.
+
+    -> create a button component so we don't have to duplicate code and write all the CSS classes if we want to use any button next time:
+
+        ```./resources/views/Components/button.blade.php
+
+            <a  {{ $attributes->merge(['class' => "relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 rounded-md hover:text-gray-500 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:focus:border-blue-700 dark:active:bg-gray-700 dark:active:text-gray-300"]) }}> {{ $slot }}</a>
+
+            # and then use it anywhere as
+                <x-button href="/jobs/create"> Create Job </x-button>
+
+        ```
+
+    * *     Implement Validation        * *
+
+        -> Now we'll validate the form before submitting it. Because we have some database constraints that must be followed (e.g. title can't be null).
+
+        -> Browser side validation can be implemented by 'introducing "required" attribute in the input field' so that user can't submit a null field.
+            -> This can be bypassed and user can submit an empty form by using CLI. So, we must need to implement Server Side Validation.
+
+        * * *       Server Side / Laravel Validation      * * *
+
+            -> To implement server side validation, we just need to use 'request()->validate($attributes)' as follows:
+
+                ```web.php
+
+                    Route::post('/jobs', function () {
+
+                        // validate the attributes
+
+                        request()->validate([
+                            'title' => ['required', 'min:3'],  // title is required and should be more than three characters
+                            'salary' => ['required']
+                        ]);
+
+                        // if this validation fails, user will be automatically redirected to form again and laravel will pass an $error[] which contains all the attributes which failed the validation
+
+                        Job::create([
+                            'title' => request('title'),
+                            'salary' => request('salary'),
+                            'employer_id' => 1
+                        ]);
+
+                        return redirect('/jobs');
+                    });
+
+                ```
+                 # if validation fails, the page will look like it refreshed and laravel will send back an error array containing the attributes that failed the validation.
+
+                 # $errors[] is always available for you. It maybe empty but it's available all the time.
+
+
+            -> let's display errors in 'create.blade.php':
+
+                ```
+                {{-- display validation errors:--}}
+                    @if($errors->any())
+                        <ul>
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                ```
+
+            -> let's display error below each input field:
+
+                @error('title')
+                    <p class="text-xs text-red-500 font-semibold mt-1"> {{ $message }}</p>
+                @enderror
+
+
+                # $message contains the error message and is available only in @error directive
+
+                # this is some inline server side validation in action.
+                # also implement client side validation ('required' attribute) for better user experience.
+
+    -> go to ' https://laravel.com/docs/11.x/validation ' to know more about validation rules.
+
+
+
+
+
+
+
+
+
 
 
 
