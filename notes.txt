@@ -1379,5 +1379,187 @@
 
 * Lecture 19 : Routes Reloaded *
 
+    * *     Route Model Binding     * *
+
+        ```
+            Route::get('/jobs/{id}', function ($id) {
+                // grab the job which has id equals to the user requested id
+                $job = Job::find($id);
+
+                // load the view
+                return view('jobs.show', ['job' => $job]);
+
+            });
+
+        ```
+
+        -> In above code, you are finding an id from the jobs page and then calling the Job model to give you the instance of the job. You will need to do that again and again. Luckily, Laravel has a short-hand for that if you follow the common convention.
+        -> We can rewrite the above code as:
+
+        ```
+           // Show
+           Route::get('/jobs/{job}', function (Job $job) {
+               return view('jobs.show', ['job' => $job]);
+           });
+
+           # notice the '{job}' placeholder and also passing a Job instance to the anonymous function.
+           # your wild card '{job}' and parameter name '$job' need to be same.
+           # then we signal the laravel that we don't need the string in the job but a 'Job' instance.
+           # it doesn't always have to be '{job}'. It's just the unique identifier in the database. In our case it was 'job_id' so we got the job id.
+           # in your case, it can be any slug or anything. You can specify the unique identifier as the following:
+
+               Route::get('/jobs/{posts:slug'}  // leave it off to stick with defaults
+        ```
+
+    * *     Controller Classes     * *
+
+        -> Developers have dedicated controller classes for handling specific tasks such as 'Routing'.
+
+        ```
+            php artisan make:controller
+                > name_of_controller -> JobController
+                > type_of_controller -> Empty
+
+
+            # path -> ./app/Http/Controllers/JobController.php
+
+        ```
+
+        -> in JobController, create methods for each task like 'index()' 'show()' 'edit()'.
+        -> Let's simplify routing by making the Route call to the corresponding method in the JobController when the user visits a specific route/page.
+        -> Example: implement in the JobController method 'index' to show user something every time the user visits the jobs page.
+
+        ```JobController.php
+
+            public function index(){
+                    dd('hello');
+                }
+
+        ```
+
+        -> Tweak the route file to call this method when a user visits job page.
+
+        ```web.php
+
+            # this is the old code :
+            // Index
+            Route::get('/jobs', function () {
+                $jobs = Job::with('employer')->latest()->simplePaginate(3);
+
+                return view('jobs.index', [
+                    'jobs' => $jobs
+                ]);
+            });
+
+            # it can be replaced with our new code to call the corresponding method in the specific controller.
+
+            // Index
+            Route::get('/jobs', [JobController::class, 'index']);
+
+            # cut the content from old route to index jobs page and place it in the 'index()' in JobController
+
+              ``` JobController.php
+
+                    public function index(){
+                        $jobs = Job::with('employer')->latest()->simplePaginate(3);
+
+                        return view('jobs.index', [
+                            'jobs' => $jobs
+                        ]);
+                    }
+
+                    # new 'index()' method.
+
+        # Do this for all actions of JobController
+
+    * *     Route::view()     * *
+
+        -> There'll be cases when, in response to the 'get()' request, you will not do anything but return just a view like home page, contact page or about page. In such case you can use this shorthand method of laravel.
+
+         ``` Route::view('/', '<view_name>');
+
+         ```web.php
+
+            Route::get('/', function () {
+                return view('home');
+            });
+
+            Route::get('/contact', function () {
+                return view('contact');
+            });
+
+            # above code can be replaced by the following code:
+
+            Route::view('/', 'home');
+            Route::view('/contact', 'contact');
+
+    * *     Listing Your Routes     * *
+
+         In normal projects, you might have hundred or routes. To list down all of your routes, use:
+            ``` php artisan route:list ```
+
+         -> To list all the routes except vendor routes
+            ``` php artisan route:list --except-vendor ```
+
+            # it will list the routes and corresponding views or actions in JobController resource and also request type on each route.
+
+    * *     Route Groups     * *
+
+        -> If you noticed in the web.php, we were referencing to the JobController in each route. Well, let's remove the duplication and group all the routes that are referencing that controller:
+
+         ```web.php
+
+            Route::controller(JobController::class)->group(function () {
+
+                   // all the routes referencing  the JobController class
+                   // e.g.
+                   Route::get('/jobs', 'index');
+                   Route::get('jobs/create',  'create');
+            });
+
+    * *     Route Resource     * *
+
+        -> We have now build a collection of actions regarding jobs in the 'web.php'. We can now just reference that resource using the 'resource()' of the 'Route' class as:
+            ``` Route::resource('<resource_name>', '<corresponding_controller_name>');
+
+        ```web.php
+
+            # here's the resource which contains collection of actions
+
+            Route::controller(JobController::class)->group(function () {
+                // Index
+                Route::get('/jobs', 'index');
+                // Create
+                Route::get('jobs/create',  'create');
+                // Show
+                Route::get('/jobs/{job}',  'show');
+                // Store
+                Route::post('/jobs',  'store');
+                // Edit
+                Route::get('/jobs/{job}/edit', 'edit');
+                // Update
+                Route::patch('/jobs/{job}', 'update');
+                // Delete Job
+                Route::delete('/jobs/{job}', 'destroy');
+            });
+
+            # this all code can be replaced with this code
+
+            Route::resource('jobs', JobController::class);
+
+        ```
+
+        -> It is not necessary to stick to all the default routes. You can specify which routes you want to include or exclude from the resource by passing the names of the actions as:
+
+            Route::resource('jobs', JobController::class, [
+                'only' => ['index', 'show', 'create'],   OR
+                'except' => ['destroy']
+                ]);
+
+
+
+
+
+
 
 
