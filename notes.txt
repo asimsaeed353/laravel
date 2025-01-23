@@ -1578,6 +1578,156 @@
         -> Think of middleware as fold on the onion which provide some security before reaching to the core of the onion.
 
 
+* Lecture 21 : LogIn and Registration System From Scratch *
+
+
+    -> We start with building new blade components so we can rapidly make forms.
+
+        i) FORM LABEL component:
+
+            <label  {{ $attributes->merge(['class' => "block text-sm/6 font-medium text-gray-900"]) }}> {{ $slot }}</label>
+
+            # used as
+
+            <x-form-label for="title">Title</x-form-label>
+
+        ii) FORM ERROR component:
+
+            @props(['name'])
+
+            @error($name)
+            <p class="text-xs text-red-500 font-semibold mt-1"> {{ $message }}</p>
+            @enderror
+
+            # used as
+
+            <x-form-error name="title" />
+
+            iii) FORM INPUT component:
+
+            @props(['name'])
+
+            <div class="flex items-center rounded-md bg-white pl-3 outline outline-1 -outline-offset-1 outline-gray-300 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
+                <input  {{ $attributes->merge(['class' => "block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6"]) }}>
+            </div>
+
+            # used as
+
+            <x-form-input name="title" id="title" placeholder="CEO" required />
+
+            iv) Extract SUBMIT button into a dedicated component:
+
+    * *     Register Some Auth Routes   * *
+
+        -> declare a new route in
+        ```web.php
+
+            Route::get('/register', [RegisteredUserController::class, 'create']);
+
+        ```
+
+        --> Make a corresponding controller and define 'create' action :
+
+            ``` php artisan make:controller RegisteredUserController ```
+
+            class RegisteredUserController extends Controller
+            {
+                public function create()
+                {
+                    return view('auth.register');
+                }
+            }
+
+        --> Now, create a Registration page for the new user. The page has fields like first name, last name, email and password.
+
+        # the submit button will submit a POST request to the '/register'.
+
+            ``` Route::Post('/register', [RegisteredUserController::class, 'store']); ```
+
+        ``` RegisteredUserController.php
+
+            public function store()
+            {
+                dd(request()->all());
+            }
+
+            # request()->all() : list down all the attributes values in the form submission.
+
+        * * *    Logging In User / Creating a new Session    * * *
+
+            ```web.php
+                Route::get('/login', [SessionController::class, 'create']);
+            ```
+
+            -> create a new controller:
+                ``` php artisan make:controller SessionController ```
+
+                # also import the SessionController class in web.php
+
+            ``` SessionController.php
+
+                class SessionController extends Controller
+                {
+                    public function create()
+                    {
+                        return view('auth.login');
+                    }
+                }
+
+            ```
+
+            # the form of the login page will submit a POST request to the '/login'
+
+            ```web.php
+
+                Route::post('/login', [SessionController::class, 'store']);
+
+            ```
+            ``` SessionController.php
+
+                public function store()
+                {
+                    dd('Hello');
+                }
+
+            ```
+
+
+    * *    Blade Directives  @auth and @guest     * *
+
+        -> @auth
+            <p> If user is authorized, then show the markup which will be placed here. </p>
+           @endauth
+
+        -> @guest
+             <p> if the user is a guest, then show this markup. </p>
+           @endguest
+
+        -> Display 'Log In' and 'Register' button to the unauthorized / guest users.
+
+        ``` layout.blade.php
+
+            <div class="ml-4 flex items-center md:ml-6">
+                @guest
+                <x-nav-link href="/login" :active="request()->is('login')" >Log In</x-nav-link>
+                <x-nav-link href="/register" :active="request()->is('register')">Register</x-nav-link>
+                @endguest
+            </div>
+
+        ```
+
+        // let's change the style of the login or register link button if the current page is login/register
+
+            ``` :active="request()->is('login')"
+             :active="request()->is('register')"
+            ```
+
+
+
+
+
+
+
 
 
 
