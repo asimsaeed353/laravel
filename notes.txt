@@ -1578,44 +1578,62 @@
         -> Think of middleware as fold on the onion which provide some security before reaching to the core of the onion.
 
 
-* Lecture 21 : LogIn and Registration System From Scratch *
+* Lecture 21 : LogIn and Registration System From Scratch Part 1 *
 
 
     -> We start with building new blade components so we can rapidly make forms.
 
+        * * *   Extracting different Components into their Dedicated File   * * *
+
         i) FORM LABEL component:
 
-            <label  {{ $attributes->merge(['class' => "block text-sm/6 font-medium text-gray-900"]) }}> {{ $slot }}</label>
+            ``` form-label.blade.php
+                <label  {{ $attributes->merge(['class' => "block text-sm/6 font-medium text-gray-900"]) }}> {{ $slot }}</label>
+            ```
 
             # used as
 
-            <x-form-label for="title">Title</x-form-label>
+                <x-form-label for="title">Title</x-form-label>
 
         ii) FORM ERROR component:
 
-            @props(['name'])
+            ``` form-error.blade.php
+                @props(['name'])
 
-            @error($name)
-            <p class="text-xs text-red-500 font-semibold mt-1"> {{ $message }}</p>
-            @enderror
+                @error($name)
+                <p class="text-xs text-red-500 font-semibold mt-1"> {{ $message }}</p>
+                @enderror
+            ```
 
             # used as
 
-            <x-form-error name="title" />
+                <x-form-error name="title" />
 
             iii) FORM INPUT component:
 
-            @props(['name'])
+            ``` form-input.blade.php
+                @props(['name'])
 
-            <div class="flex items-center rounded-md bg-white pl-3 outline outline-1 -outline-offset-1 outline-gray-300 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
-                <input  {{ $attributes->merge(['class' => "block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6"]) }}>
-            </div>
+                <div class="flex items-center rounded-md bg-white pl-3 outline outline-1 -outline-offset-1 outline-gray-300 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
+                    <input  {{ $attributes->merge(['class' => "block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6"]) }}>
+                </div>
+            ```
 
             # used as
 
-            <x-form-input name="title" id="title" placeholder="CEO" required />
+                <x-form-input name="title" id="title" placeholder="CEO" required />
 
             iv) Extract SUBMIT button into a dedicated component:
+
+            ``` form-button.blade.php
+
+                <button type="submit" {{ $attributes->merge(['class' => "rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"]) }}> {{ $slot }} </button>
+
+            ```
+
+            # used as
+
+                <x-form-button>Register</x-form-button>
 
     * *     Register Some Auth Routes   * *
 
@@ -1651,7 +1669,7 @@
                 dd(request()->all());
             }
 
-            # request()->all() : list down all the attributes values in the form submission.
+            # request()->all() : print all the attribute values in the form submission.
 
         * * *    Logging In User / Creating a new Session    * * *
 
@@ -1723,8 +1741,9 @@
             ```
 
 
+* Lecture 22 : LogIn and Registration System From Scratch Part 2 *
 
-
+    
 
 
 
