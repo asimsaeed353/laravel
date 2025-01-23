@@ -1392,8 +1392,7 @@
             });
 
         ```
-
-        -> In above code, you are finding an id from the jobs page and then calling the Job model to give you the instance of the job. You will need to do that again and again. Luckily, Laravel has a short-hand for that if you follow the common convention.
+        -> In above code, you are finding an id from the jobs page and then calling the Job model to give you the instance of the job with that specific 'id'. You will need to do that again and again in multiple routes actions. Luckily, Laravel has a short-hand for that if you follow the common conventions.
         -> We can rewrite the above code as:
 
         ```
@@ -1402,7 +1401,7 @@
                return view('jobs.show', ['job' => $job]);
            });
 
-           # notice the '{job}' placeholder and also passing a Job instance to the anonymous function.
+           # notice the '{job}' wildcard and also passing a Job instance '$job' to the anonymous function.
            # your wild card '{job}' and parameter name '$job' need to be same.
            # then we signal the laravel that we don't need the string in the job but a 'Job' instance.
            # it doesn't always have to be '{job}'. It's just the unique identifier in the database. In our case it was 'job_id' so we got the job id.
@@ -1425,9 +1424,9 @@
 
         ```
 
-        -> in JobController, create methods for each task like 'index()' 'show()' 'edit()'.
+        -> in JobController, define methods for each action like 'index()' 'show()' 'edit()'.
         -> Let's simplify routing by making the Route call to the corresponding method in the JobController when the user visits a specific route/page.
-        -> Example: implement in the JobController method 'index' to show user something every time the user visits the jobs page.
+        -> Example: implement, in the JobController, method 'index', to show user something every time the user visits the jobs page.
 
         ```JobController.php
 
@@ -1451,7 +1450,7 @@
                 ]);
             });
 
-            # it can be replaced with our new code to call the corresponding method in the specific controller.
+            # above code can be replaced with our new code (following) to call the corresponding method in the specific controller.
 
             // Index
             Route::get('/jobs', [JobController::class, 'index']);
@@ -1468,9 +1467,9 @@
                         ]);
                     }
 
-                    # new 'index()' method.
+                    # above is new 'index()' method.
 
-        # Do this for all actions of JobController
+        # Do this for all remaining actions ('create', 'show', 'edit' etc) of JobController
 
     * *     Route::view()     * *
 
@@ -1557,7 +1556,26 @@
                 ]);
 
 
+#### Chapter 04 - Authentication ####
 
+* Lecture 20 : Starter Kits *
+
+    -> Laravel Breeze is a starter kit that'll providing initial scaffold data to help your app up and running. It manages the user registration, login form, password reset form, etc.
+    -> Starter Kits are intended to be used at the start of the project. Because, Laravel Breeze assume certain things. It assumes you have a welcome page, brings some blade components, overwrite your routes file. So if we use starter kit in middle of your project, it might cause a conflict with your project files.
+
+    * *     New Project     * *
+
+        -> Initialize a new project, this time with
+            > Laravel Breeze
+            > Blade with Alpine
+            > SQLite
+
+        -> Inspect how they have implemented user registration, login, authentication, verification, etc.
+
+    * *     Middleware     * *
+
+        -> Protection layer
+        -> Think of middleware as fold on the onion which provide some security before reaching to the core of the onion.
 
 
 
