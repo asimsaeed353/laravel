@@ -1947,7 +1947,247 @@
             -> In this website, we are allowing user to make hundred of thousands of login or register request. Maybe you can limit that.
 
         * *     Resetting Password    * *
+
         * *     Sending Email    * *
+
+
+* Lecture 23 : 6 Steps to Authorization Mastery *
+
+    -> If we want to perform authorization for a USER and the JOB, there must be a relation between a USER and the JOB. There's also no relation between a USER and an EMPLOYER. Let's make that:
+
+        -> open the employer migration:
+
+            -> add a foreign key for user id in the up function:
+                ``` $table->foreignIdFor(\App\Models\User::class); ```
+
+            -> ```EmployerFactory.php
+                    # in definition function
+                    'user_id' => User::factory(),
+
+        -> Run the following command to build and seed database :
+            ``` php artisan migrate:fresh --seed
+
+
+    * *     Begin Authorization     * *
+
+        * * *   Inline Authorization    * * *
+
+            -> Go to JobController.php and to the 'edit()'.
+            -> Currently, any user can edit any job even if he or she is not authorised to do so.
+
+            -> we can check if the user is guest, redirect to the login page:
+             ```JobController.php > edit()
+
+                if(Auth::guest()){
+                    return redirect('/login');
+                }
+
+             -> Now, the issue is any logged-in user can edit any job. Let's fix this by applying second layer of authorization:
+
+                // you need to be responsible for that job
+
+                # remember the sequence: job -- belongsTo --> Employer -- belongsTo --> User
+
+                -> build up the relation between Employer and User in:
+                ``` Employer.php
+
+                    public function user(): BelongsTo
+                    {
+                        return $this->belongsTo(User::class);
+                    }
+
+                    # an Employer belongs to a User
+
+                -> switch back to ```JobController.php > edit()
+
+                    # check whether the currently logged in user is responsible for the job and let him edit the job
+
+                    if($job->employer->user->isNot(Auth::user()){
+                        abort(403);
+                    }
+
+                    # $model->is() : determine if two models have the same ID and belong to the same table.
+                    # $model->isNot() : opposite of is()
+
+                    ```JobController.php
+
+                        public function edit(Job $job){
+
+                                // check user is logged in
+                                if(Auth::guest()){
+                                    return redirect('/login');
+                                }
+
+                                // check user is not authorized to edit the job
+                                if($job->employer->user->isNot(Auth::user())){
+                                    abort(403);
+                                }
+
+                                return view('jobs.edit', ['job' => $job]);
+                            }
+                        ```
+
+             -> Now, a user will be able to edit a job if he is logged in and is authorized to edit the job.
+
+        * * *   Gates    * * *
+
+            -> Gates allow entry only if you meet certain criteria. If you are authorized, the gate will open.
+
+                -> We can define a Gate so we can use it anywhere. Gate definition is as follows:
+                    // Gate
+                    Gate::define('gate-name', function (<class-name> $<variabele_name>, <class-name> $<variable-name>){
+                        return $job->employer->user-is($user);
+                    });
+
+                    # we can call this gate anywhere using:
+                        Gate::authorize('<gate-name>', $<job-to-be-referred>);
+
+                    # you can also use 'Gate::denies()' or 'Gate::allows()' to do something if access is denied or access is granted.
+
+            * * * *     Define Gates Inside AppServiceProvider  * * * *
+
+                -> The Gate definition in last section will only be created if you were on the edit page.
+
+                -> Take your Gate definition to some place where it is accessible with each request.
+                -> Place it in ``` app/Providers/AppServiceProviders.php > boot()```
+
+                    # user in the gate definition will always refer to currently authenticated user.
+
+                    # if user is a guest, the gate will always fail.
+
+                    # in some situations, you might don't want to fail the gate for guest, in those cases:
+
+                        i) set the user to null i.e.
+                            ``` User $user = null,
+                        ii) make it optional
+                            ``` ?User $user,
+
+                -> Our edit method in 'JobController.php' looks like this:
+
+                    public function edit(Job $job){
+
+                        // Gate defined in AppServiceProvider.php
+                        Gate::authorize('edit-job', $job);
+
+                        return view('jobs.edit', ['job' => $job]);
+                    }
+
+        * * *   Can, Can, Can    * * *
+
+            -> User Model by-default imports 'can()' and 'cannot()'.
+            -> $model->can() : determine if the entity has the given ability.
+
+                // gate can now be called as:
+
+                Auth::user()->can('edit-job'', $job);
+
+                # it will return a boolean.
+
+            -> Think if the user is not authorized to edit a job, we shall not display the edit button with job. Let's fix this using '@can('<gate-name').
+
+            ```show.blade.php
+
+                @can('edit-job', $job)
+                    <p class="mt-5">
+                        <x-button href="/jobs/{{ $job->id }}/edit"> Edit Job </x-button>
+                    </p>
+                @endcan
+
+            ```
+
+        * * *   Middleware Authorization    * * *
+
+            -> We assume if a user can edit the job, it can update the job and delete the job. So, we'll have to copy the line
+            ``` Gate::authorize('edit-job', $job); ```
+            in 'update()' and 'delete()' actions.
+            A bit of repetition, right? Let's fix the repetition with 'Middleware'
+
+            -> You can perform the authorization on the route level by using MIDDLEWARE.
+
+            -> middleware('auth');
+
+                # 'auth' ensures that you are authenticated.
+
+            -> One down-side of one-liner approach to declaring your routes is that if you add middleware to a route resource, it will be applied to every single route the resource generates.
+            -> Example: If we add middleware to 'jobs' route resource:
+                ```Route::resource('jobs', JobController::class)->middleware('auth');
+
+                # if you logout and visit the page, it will show an error because you are not authorized to view jobs as middleware is applied to all 'jobs' routes. That means, you will have to login even to view the jobs.
+
+                # For login-page, laravel doesn't look for 'login' URL because the URL can be different for different applications, rather it will look for a page which has name 'login'. You can fix this by giving particular login route a name as:
+                    Route::get('/login', [SessionController::class, 'create'])->name('login');
+
+            -> In a route resource containing different routes, if you want to apply middleware to specific routes. Use one of following methods:
+
+                i) Route::resource('jobs', JobController::class)->only(['index', 'show']);
+                # don't apply middleware to the mentioned routes
+
+                ii) Route::resource('jobs', JobController::class)->except(['index', 'show']);
+                 # apply middleware to all routes except the mentioned routes
+
+            -> The above approach is good but it's better to revert to single page route declaration in 'web.php'. The benefit will be, we can apply middleware per route.
+
+                Route::post('/jobs', [JobController::class, 'store'])->middleware('auth');
+
+                # you need to be authorized to create a job
+
+                Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])->middleware(['auth', 'can:<gate-name>,<job>']);
+
+                OR
+
+                Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])->middleware('auth')->can('edit-job', 'job');
+
+                # user should be authorized and also has permission to edit the job. Only in that case, user can edit a job.
+
+        * * *   Policies    * * *
+
+            -> Policies are similar to Gates. Maybe a little easy to implement.
+            -> Make a new policy and link it to Job:
+
+                ```php artisan make:policy > JobPolicy > Job ```
+
+                ```JobPolicy.php
+                    use App\Models\Job;
+                    use App\Models\User;
+                    use Illuminate\Auth\Access\Response;
+
+                    class JobPolicy
+                    {
+                        public function edit(User $user, Job $job) :bool
+                        {
+                            return $job->employer->user->is($user);
+                        }
+                    }
+                ```
+
+                # now we have migrated to dedicated Gate policy. Let's implement and reference it.
+
+                ```web.php
+
+                    Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])
+                        ->middleware('auth')
+                        ->can('edit', 'job');
+
+                    # 'edit-job' gate is changes to 'edit' policy. same in view file to show edit button or not:
+
+                    ```show.blade.php
+                        @can('edit', $job)
+                            <p class="mt-5">
+                                <x-button href="/jobs/{{ $job->id }}/edit"> Edit Job </x-button>
+                            </p>
+                        @endcan
+
+                    ```
+
+
+
+
+
+
+
+
+
+
 
 
 
