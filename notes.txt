@@ -1743,7 +1743,215 @@
 
 * Lecture 22 : LogIn and Registration System From Scratch Part 2 *
 
-    
+        * *     Registering User    * *
+
+            -> Let's decide what should happen when a user registers on our website:
+
+                ```RegisteredUserController.php
+
+                 i) validate
+                    $validatedAttributes = request()->validate([
+                        'first_name' => ['required'],
+                        'last_name' => ['required'],
+                        'email' => ['required', 'email'],
+                        'password' => ['required', Password::min(5), 'confirmed']
+                    ]);
+
+                    # password will not be stored as plain text but rather as 'hashed_value'.
+
+                # if you want to apply general password rules like length of minimum characters, at least a number etc, use this
+                    ``` Illuminate\Validation\Rules::min(5)->letters()->numbers()->max()```
+
+                    OR, set them to default
+
+                        ``` Illuminate\Validation\Rules::default() ```
+
+                    # laravel.com/docs/validation for more
+
+                # if you include 'confirmed' as validation attribute password, laravel will look for 'password_confirmation' field and will confirm if the two passwords match.
+
+                # the validate() will return an array of validated attributes which we can pass to the create method to create a user with validated attributes.
+
+                ii) create user in database
+                        $user = User::create($validatedAttributes);
+
+
+                iii) Log In user
+
+                    # login($user) will need user's details to log him/her in
+
+                    // log in user
+                        Auth::login($user);
+
+                iv) redirect somewhere (dashboard, home page)
+                    return redirect('/jobs');
+
+                -> Whole method in 'RegisteredUserController.php':
+
+                ```RegisteredUserController.php
+
+                    public function store()
+                        {
+                            // validate
+                            $validatedAttributes = request()->validate([
+                                'first_name' => ['required'],
+                                'last_name' => ['required'],
+                                'email' => ['required', 'email'],
+                                'password' => ['required', Password::default(), 'confirmed']
+                            ]);
+
+                            // create user in database
+                            $user = User::create($validatedAttributes);
+
+                            // log in user
+                            Auth::login($user);
+
+                            // redirect somewhere (dashboard, home page)
+                            return redirect('/jobs');
+                        }
+
+                    ```
+
+                -> Now modify ```User.php``` so that fields could be mass assigned:
+
+                    ```User.php
+                        protected $guarded = [];
+                    ```
+
+
+        * *     Logging Out  User    * *
+
+            -> Developers usually go with a get request to log out a user. But it's generally frowned upon.
+            ->Always use a Post request when logging out a user. Use a form to accomplish your action.
+
+            -> Reason: Some malicious person put some different link in the get request and you will think you are logging out form Facebook but under the hood, you might have been logging out of Laracasts or any other website.
+
+            -> Let's declare a logout route and corresponding action:
+
+                ```web.php
+                    Route::post('/logout', [SessionController::class, 'destroy']);
+                ```
+
+            -> and show a logout button to user:
+
+                ```layout.blade.php
+
+                     {{-- For Logged In User --}}
+                     @auth
+
+                         <form method="POST"  action="/logout" >
+                             @csrf
+                             <x-form-button>Logout</x-form-button>
+                         </form>
+                     @endauth
+
+            -> also define a 'destroy()' in 'SessionController.php' :
+
+                ```SessionController.php
+
+                    public function destroy(){
+                        Auth::logout();
+
+                        return redirect('/');
+                    }
+
+                ```
+
+        * *     Logging In  User    * *
+
+            i) Validate the Request
+
+                // validate
+                $validatedAttributes = request()->validate([
+                   'email' => ['required', 'email'],
+                   'password' => ['required'],
+                ]);
+
+
+            ii) Attempt to login User (if password is correct)
+
+                // attempt to login user
+                # if user entered wrong password:
+                if(! Auth::attempt($validatedAttributes)){
+                    throw ValidationException::withMessages([
+                        'email' => 'Sorry, those credentials do not match'
+                    ]);
+                }
+
+                # the attempt method will return a boolean if the user has successfully logged in or not
+
+
+            iii) Regenerate the Session Token
+
+                // regenerate the session token
+                request()->session()->regenerate();
+
+            iv) Redirect to some page
+
+                return redirect('/jobs');
+
+
+            -> Whole login method:
+
+            ```SessionController.php
+
+                public function store()
+                    {
+                        // validate
+                        $validatedAttributes = request()->validate([
+                           'email' => ['required', 'email'],
+                           'password' => ['required'],
+                        ]);
+
+                        // attempt to login user
+
+                        # if user entered wrong password:
+                        if(! Auth::attempt($validatedAttributes)){
+                            throw ValidationException::withMessages([
+                                'email' => 'Sorry, those credentials do not match'
+                            ]);
+                        }
+
+                        # the attempt method returns a boolean if the user has successfully logged in or not
+
+                        // regenerate the session token
+                        request()->session()->regenerate();
+
+                        # security measure that protects against session hijacking
+
+                        // redirect to some page
+                        return redirect('/jobs');
+                    }
+
+            # If user entered incorrect credentials, the page will refresh and the email and password files will be wiped-off. The user will have to write the email or password again even if he had made a single character mistake.  Let's solve this issue so user don't have to write everything all over in case he made a mistake:
+
+                # include ``` :value="old('email')" ``` in the email form input attributes:
+
+                ```login.blade.php
+
+                    <x-form-input name="email" id="email"  type="email" :value="old('email')" required />
+
+                    # notice the colon : before value ':value'. It means, statement in 'value' attribute is an expression and not a string.
+
+                ```
+
+            * * *   Session Hijacking   * * *
+
+                -> The exploitation of a valid session token to gain unauthorized access to a web server. That's why we were regenerating the session token.
+                -> Always regenerate the session token when a user signs in. So if a hacker has an old token, it will not work.
+
+
+        * *     Rate Limiting    * *
+
+            -> Control the rate of requests that may be sent to the server.
+            -> In this website, we are allowing user to make hundred of thousands of login or register request. Maybe you can limit that.
+
+        * *     Resetting Password    * *
+        * *     Sending Email    * *
+
+
+
+
 
 
 
