@@ -2180,13 +2180,212 @@
                     ```
 
 
+* Lecture 24 : Preview and Send Email Using Mailable Classes *
+
+    -> Make a new mailable class:
+        ``` php artisan make:mail   -> give name e.g. JobPosted
+
+    -> 'envelop()' : if you want to send an email. You'll have to fill this 'envelop()' method.
+        --> Subject of the Email
+        --> Whom to send
+        --> Who it's from
+        --> Tags associated with the email
+        --> Reply to
+
+    ->  'content()' : write the content of the email and we return a view
+
+    -> Creat a new views directory 'mail' where you will make a new view for mail content
+        ```./resources/views/mail/job-posted.blade.php```
+        --> Place the content of the mail in this file.
+
+            ```JobPosted.php
+                /**
+                        * Get the message content definition.
+                        */
+                       public function content(): Content
+                       {
+                           return new Content(
+                               view: 'mail.job-posted',
+                           );
+                       }
+            ```
+
+        --> Create a dummy route to test the email:
+        ```web.php
+
+            // create a test route
+            Route::get('test', function () {
+               return new JobPosted();
+            });
+        ```
+        --> If we'll go to the route i.e. 'http://127.0.0.1:8000/test', we'll see body of our email.
 
 
+    * *  Send an Email to any User   * *
 
+        -> We haven't configured any SMTP server, so we if we try sending an email, it will not actually be sent, rather it will be just stored in logged files.
 
+        -> Let's try sending an email using Mail Facade:
 
+            ```web.php
+                // create a test route
+                Route::get('test', function () {
 
+                    \Illuminate\Support\Facades\Mail::to('asimseed353@gmail.com')->send(new JobPosted());
 
+                    return 'Done';
+                });
+            ```
+            # This email will not be sent to the user rather it will be stored in logs. You can check the logs at './storage/logs/laravel.log'
+
+        * * *   Configure Mail Setting   * * *
+
+            -> ' ./config/mail.php ' is where we can configure our mail settings.
+                --> How to send mail
+                --> configuring SMTP Server
+
+            -> We can also configure these mail settings in '.env' file.
+
+            * * * *   Environment File   * * * *
+
+                -> Includes configuration values that may differ based on whether your application is running locally or in production.
+                -> This includes configuration for current environment and if you are gonna push your site to production, we'll duplicate the file and many of the values will be swapped out.
+
+                -> In this .env file, for local environment, ``` 'APP_ENV'=local ```  but for production it will be ``` 'APP_ENV'=production ```
+
+                -> Modify the mail settings to :
+
+                    ``` .env
+
+                        MAIL_FROM_ADDRESS="info@swh.com"
+                        MAIL_FROM_NAME="Asim Saeed"
+
+                    ```
+                -> The above setting will be for global mails. If you want to change the setting for a specific mail you can do it as:
+
+                    ```JobPosted.php
+
+                        public function envelope(): Envelope
+                            {
+                                return new Envelope(
+                                    subject: 'Job Posted',
+                                    from: 'admin@swh.com',
+                                    replyTo: '',
+                                );
+                            }
+
+                    ```
+            * * * *   Mailtrap SMTP Server   * * * *
+
+                -> We can configure smtp server so we can test our mail.
+                -> Go to mailtrap.io and copy configuration settings to .env file so we can start testing the mail
+
+                 ``` .env
+
+                    ; MAIL_MAILER=log
+                    ; MAIL_SCHEME=null
+                    ; MAIL_HOST=127.0.0.1
+                    ; MAIL_PORT=2525
+                    ; MAIL_USERNAME=null
+                    ; MAIL_PASSWORD=null
+                    ; MAIL_FROM_ADDRESS="info@swh.com"
+                    ; MAIL_FROM_NAME="Asim Saeed"
+
+                    # the above code will be changed to :
+
+                    # Looking to send emails in production? Check out our Email API/SMTP product!
+                    MAIL_MAILER=smtp
+                    MAIL_SCHEME=null
+                    MAIL_HOST=sandbox.smtp.mailtrap.io
+                    MAIL_PORT=2525
+                    MAIL_USERNAME=418ae4584a8289
+                    MAIL_PASSWORD=941a946a99b2da
+                    MAIL_FROM_ADDRESS="info@swh.com"
+                    MAIL_FROM_NAME="Asim Saeed"
+
+                 ```
+
+            * * * *   Put some Real Data in Mail   * * * *
+
+                -> Now we are gonna put some real data in the mail such as job details and link to job page.
+                -> Remember a Job belongs to an Employer and an Employer belongs to a user. So, where we are publishing job, we can also send mail there.
+                    -> Remove the 'Test' route in the ``web.php``` and also change the JobController.php as:
+
+                        ```JobController.php
+
+                            public function store(){
+                                    // validate the attributes
+                                    request()->validate([
+                                        'title' => ['required', 'min:3'],  // title is required and should be more than three numbers
+                                        'salary' => ['required']
+                                    ]); // if this validation fails, user will be redirected to form again and laravel will pass an $error[] which contains all the attributes which failed
+
+                                    $job = Job::create([
+                                        'title' => request('title'),
+                                        'salary' => request('salary'),
+                                        'employer_id' => 1
+                                    ]);
+
+                                    Mail::to($job->employer->user)->send(new JobPosted($job));
+
+                                    return redirect('/jobs');
+                                }
+
+                            ```
+                        -> Also change the constructor in the mail class as:
+
+                            ```JobPosted.php
+
+                                public function __construct(public Job $job)
+                                {
+                                    //
+                                }
+
+                            ```
+                            # This step is needed so we can access the job instance in the corresponding view.
+
+                        -> Let's change the view file to include job details such as Job Title. You can also give specific attributes to be passed to the view and also make the Job instance protected so specific attributes of Job instance is passed to the view. You'll need to do this:
+
+                            ```JobPosted.php
+
+                                public function content(): Content
+                                {
+                                    return new Content(
+                                        view: 'mail.job-posted',
+                                        with = [
+                                            'foo' => 'bar',
+                                            'title' => $this->job->title,
+                                            # make sure the job instance in the constructor is protected not public
+                                        ]
+                                    );
+                                }
+
+                            ```
+
+                        -> For now, we'll pass the job instance as public and let's change the view of the mail:
+
+                            ```job-posted.blade.php
+
+                                <h2>
+                                    {{ $job->title }}
+                                </h2>
+
+                                <p>
+                                    Congrats! Your Job is live.
+                                </p>
+
+                                <a href=" {{ url('/jobs/' . $job->id) }}">View Your Job Listing</a>
+
+                                # note in the <a> tag, we have to give the whole url to the job listing page because user will recieve this url in the email not on our website. 'url()' will give the url to our webiste. 'url()' is equal to 'example.test' or 'google.com' etc.
+
+                                # 'url()' will work for your local environment as well as for production environment.
+
+    * *  !!! Issues to be Solved !!!   * *
+
+        i) Sending an email is taking a lot of time even though we are still in the local environment. It means it will take more time in the production environment.
+        ii) User doesn't even know if we are about to fire up an email while user is posting a job.
+
+        -> We are gonna solve the above two issues using 'QUEUES'
 
 
 
