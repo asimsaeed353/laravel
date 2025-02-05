@@ -2389,6 +2389,135 @@
 
 
 
+* Lecture 25 : Queues *
+
+    -> In the previous lesson, we were sending mail synchronously. The issue is that we are making the user wait whatever time it takes to send an email. It might take 2 seconds or 2 minutes which is not very good practice.
+
+    -> If there's some way we can through the job in the background and show user an immediate response.
+
+    -> ' ./config/queue.php ' contains the configuration details of queues. You can change this file if you want to queue your jobs/work rather doing it synchronously. By-default 'QUEUE_CONNECTION' is set to 'database' i.e. the queued jobs will be sent to the database hence we got 'jobs' and 'failed_jobs' tables out of the box.
+
+    -> Remember the 'job' and 'failed_jobs' table that come by default with laravel. These tables are actually used to store the 'queued jobs' and 'queued failed_jobs'.
+
+    -> Let's through a Job into the queue. Now, the job will be posted instantly and the 'email job' will be thrown in queue. You just have to change '->send' to 'queue' in mail as:
+
+        ```JobController.php
+
+            Mail::to($job->employer->user)->queue(new JobPosted($job));
+
+            # the job is queued but there are no worker for us who's gonna do the job for us i.e. the email job is pending in queue and waiting to be done something to it.
+        ```
+         -> to tell the worker do the jobs pending in queue i.e. post the queued email, use
+            ``` php artisan queue:work ``` and the email will be delivered.
+
+    -> If you intend to use the queue, you must have one or more worker to work on the queue. That's what the ``` php artisan queue:work ``` does.
+    -> If you push your application to production, you'll need to run the last mentioned command. Dw, there are tools that make sure that (no matter what) the last mentioned command is always running behind the scenes. One such tool is called 'supervisor'
+
+    * *     Dispatching a Job to the Queue    * *
+
+        -> In real life, there'll be a lot of actions than just sending an email while a job is posted. Certainly, we'll need to use 'dispatcher()' to dispatch the jobs. Let's use this method to queue a job i.e. sending something to log file every time a job is posted:
+
+        ```web.php
+
+            Route::get('test', function (){
+
+                dispatch(function (){
+                   logger('Hello from the queue');
+                });
+
+                return 'Done';
+            });
+
+            # this will add a job in the queue. The job will be to write 'Hello from the queue' to the laravel.log
+
+        ```
+
+        -> Ever noticed when you singup to some website, you get a Welcome email after a certain time? You can use 'delay()' to delay dispatching a job.
+
+            ``` dispatch(function (){
+                   logger('Hello from the queue');
+                })->delay(5);
+
+                # this will delay the job for 5 sec even though the worker is ready to perform the job.
+                # the closure () of dispute method is called 'queued closure'.
+            ```
+
+    * *     Dedicated Job Class    * *
+
+        -> Suppose whenever an employer posts a job, we want the job listing to be translated into 15 different languages using AI. Surely, the task gonna take some time so we can queue the job.
+
+            -> make a new job class 'TranslateJob':
+                ``` php arisan make:job ``` -> give the name of the job
+
+                #  INFO:  Job [D:\example\app\Jobs\TranslateJob.php] created successfully.
+
+            -> In 'TranslateJob.php' there's a method 'handle()' where all the logic regarding the job will be triggered. Let's test it.
+
+            ```TranslateJob.php
+                public function handle(): void
+                {
+                    // this is where the job logic is triggered.
+
+                    logger("Hello from the TranslateJob class");
+                }
+            ```
+            -> Let's test it by defining a route. This time we're not gonna use queued closure rather we will use the instance of the 'TranslateJob' instance.
+
+            ```web.php
+
+                Route::get('test', function (){
+
+                    \App\Jobs\TranslateJob::dispatch();
+
+                    return 'Done';
+                });
+
+                # go to 'url.test/test', refresh the page and also run the worker ``` php artisan serve queue:work ```
+            ```
+
+            -> We have to pass the instance of the job class i.e. any job so the 'TranslateJob' class can modify the job details using AI. Here's how we gonna do it:
+
+            ```web.php
+
+                Route::get('test', function (){
+
+                    $job = Job::first(); // grab the first job
+
+                    TranslateJob::dispatch($job);  // pass the job instance so we can translate the job details in the TranslateJob
+
+                    return 'Done';
+                });
+
+            ```
+
+            -> we'll also have to change the constructor of 'TranslateJob' class's constructor to accept an instance of Job class which will be used in 'handle()' in same class
+
+             ``` TranslateJob.php
+
+                public function __construct(public Job $jobListing)
+                {
+                    //
+                }
+
+                /**
+                 * Execute the job.
+                 */
+                public function handle(): void
+                {
+                    // this is where the job logic is triggered.
+
+                    logger('Translating ' . $this->jobListing->title . ' into spanish');
+                }
+
+                # notice we used $jobListing instead of $job. This is because $job is already defined and in use of Queue class.
+                # don't forget to run ``` php artisan queue:work ``` everytime you make changes.
+
+             ```
+
+
+
+
+
 
 
 
