@@ -2515,6 +2515,55 @@
              ```
 
 
+* Lecture 25 : Asset Bundling and Vite *
+
+    -> Asset Bundling refers to taking all of your assets e.g. images, stylesheets and bundle them together to be used effeiciently and more importantly they are optimized to be used in production.
+    -> Vite is one of the most popular bundlers in the market.
+
+    -> Make sure to have 'node.js' and 'npm' installed in your system.
+
+    -> Install np dependencies ``` npm install ```
+    -> Go to your .env file and update the 'APP_URL=localhost' to  'APP_URL=example.test'
+    -> Import the css file to the blade files. In the 'layout.blade.php' in <head> paste:
+        ``` @vite(['resources/css/app.css']) ```
+
+        # any css you will write in 'resources/css/app.css' will be applied.
+
+    * *     Hot Reloading (HMR)   * *
+
+        -> Instant updates without reloading the page or losing application state. Any change made to the stylesheet or javascript, the browser will automatically reflect that without needing to refresh the page.
+
+    -> CSS Resource: 'resources/css/app.css' (make css changes to this file)
+    -> Javascript Resources: 'resources/js/app.js' (make javascript changes to this file)
+
+    -> Write 'alert()' in 'resources/js/app.js'. This will take effect only if you reference it using vite directive in 'layout.blade.php' as:
+        ``` @vite(['resources/css/app.css', 'resources/js/app.js']) ```
+
+    * *     Integrate TailwindCSS   * *
+
+        -> Integrating TailwindCSS using play CDN is not recommended for production.
+        -> Install TailwindCSS using framework guides:
+
+    * *     Custom Classes      * *
+
+        -> Now uses custom CSS classes as:
+
+            ```tailwind.config.js
+                extend: {
+                    fontFamily: {
+                        sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                    },
+                    colors: {
+                        "laracasts": "rgb(150,100,50)",
+                    }
+                },
+
+                # now we can use 'laracasts' anywhere as our css class. For example:
+                    <header class="bg-laracasts shadow">
+            ```
+
+    -> ``` npm run build ``` : bundle all the files for production
+
 
 
 
